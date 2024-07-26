@@ -10,6 +10,8 @@ cd piano_to_midi
 py -m pip install -r requirements.txt
 ```
 
+Note: if `py` doesn't work, you might want to replace `py` with `python3`
+
 ## Usage
 
 To run the program, execute:

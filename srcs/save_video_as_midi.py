@@ -132,7 +132,7 @@ Skip video processing?"""
             msg, title="Processing Record Found", choices=['yes', 'no', 'cancel'], cancel_choice='cancel'
         )
         if choice == 'cancel':
-            raise RuntimeError
+            raise RuntimeError("cancelled")
         use_history = (choice == 'yes')
     else:
         use_history = False
@@ -141,8 +141,10 @@ Skip video processing?"""
     name = easygui.enterbox(
         msg=f"Video path: \"{path}\"\n{'[ Use history: Yes ]' if use_history else ''}\nName: ",
         default=pathlib.Path(path).stem
-    ).strip()
-
+    )
+    if name is None:
+        raise RuntimeError("cancelled")
+    name = name.strip()
     return [path, name, use_history]
 
 
