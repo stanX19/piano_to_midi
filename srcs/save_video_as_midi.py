@@ -180,3 +180,4 @@ def save_video_as_midi(dst_path: str, video_path: Union[list, None] = None):
 if __name__ == '__main__':
     # save_video_as_midi(my_path.data, [r"C:\Users\DELL\PycharmProjects\pythonProject\piano_to_midi\assets\amygdala_piano.mp4"])
     save_video_as_midi(my_path.data)
+
