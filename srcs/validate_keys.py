@@ -17,10 +17,10 @@ def is_outlier(data: list[int]) -> list[bool]:
     k = max(k1, k2)
     lower_bound = math.floor(iq_data[0] - k)
     upper_bound = math.ceil(iq_data[-1] + k)
-    # print(k1, k2)
-    # print(k)
-    # print(lower_bound)
-    # print(upper_bound)
+    # # print(k1, k2)
+    # # print(k)
+    # # print(lower_bound)
+    # # print(upper_bound)
     return [w < lower_bound or w > upper_bound for w in data]
 
 
@@ -36,18 +36,36 @@ def keys_is_connected(keys: list[RectType]) -> bool:
     if len(keys) < 2:
         return False
     widths = [k[2] for k in keys]
-    width_mean = statistics.mean(utils.get_iq_data(widths))
+    width_mean = int(statistics.mean(utils.get_iq_data(widths)))
     keys_xdis = [keys[i][0] - keys[i - 1][0] for i in range(1, len(keys))]
-    keys_xdis_grouped = utils.group_data(keys_xdis, tolerance=width_mean * 0.1)
-    lowest_xdis = statistics.mean(keys_xdis_grouped[0])
+    keys_xdis_grouped = utils.group_data(keys_xdis, tolerance=min(keys_xdis) * 0.5)
+    lowest_xdis = int(statistics.mean(keys_xdis_grouped[0]))
 
-    if lowest_xdis > width_mean * 1.25:
+    # if keys gap is more than width * k, reject
+    if lowest_xdis > max(width_mean * 1.5, width_mean + 10):
+        # print(f"{lowest_xdis=} > {width_mean * 1.5=}")
         return False
-    # print(lowest_xdis, width_mean * 1.25)
-    # print(keys_xdis_grouped)
-    # TODO:
-    #   remove code below and do keys completion instead, using insert
-    if len(keys_xdis_grouped) > 1:  # if theres missing keys
+    # if keys gap is less than width * k, reject
+    if lowest_xdis < min(width_mean * 0.6, width_mean - 10):
+        # print(f"{lowest_xdis=} < {width_mean * 0.6=}")
+        return False
+    idx = 0
+    while idx < len(keys) - 1:
+        if keys[idx + 1][0] - keys[idx][0] > lowest_xdis * 1.2:
+            x = keys[idx][0] + max(lowest_xdis, keys[idx][2])
+            y = keys[idx][1]
+            w = min(width_mean, keys[idx + 1][0] - keys[idx][0] - keys[idx][2])
+            h = keys[idx][3]
+            keys.insert(idx + 1, (x, y, w, h))
+        idx += 1
+
+    # recalculate
+    tolerance = max(keys_xdis_grouped[0]) - min(keys_xdis_grouped[0]) + 5
+    keys_xdis = [keys[i][0] - keys[i - 1][0] for i in range(1, len(keys))]
+    keys_xdis_grouped = utils.group_data(keys_xdis, tolerance=tolerance)
+    # # print(f"{keys_xdis_grouped=}")
+
+    if len(keys_xdis_grouped) > 1:  # if there's missing keys
         return False
     return True
 
@@ -76,6 +94,9 @@ def black_is_correct(white_keys: list[RectType], black_keys: list[RectType]) -> 
         group_record.pop(0)
     if group_record[-1] == 0:
         group_record.pop(-1)
+
+    # TODO:
+    #   add keys completion below
     if len(group_record) < 2:
         return False
     if group_record[0] + group_record[1] > 5:
@@ -88,25 +109,28 @@ def black_is_correct(white_keys: list[RectType], black_keys: list[RectType]) -> 
         if group + group_record[idx + 1] != 5:
             return False
 
-    print(f"{group_record=}")
+    # # print(f"{group_record=}")
     return True
 
 
-def validate_keys(image, white_keys: list[RectType], black_keys: list[RectType]) -> Union[None, tuple[list[RectType], list[RectType]]]:
+def validate_keys(white_keys: list[RectType], black_keys: list[RectType]) -> Union[None, tuple[list[RectType], list[RectType]]]:
     if not white_keys or not black_keys:
         return None
     white_keys.sort(key=lambda k: k[0])
     black_keys.sort(key=lambda k: k[0])
     # step1: black AND white width check
     if has_uneven_width(white_keys) or has_uneven_width(black_keys):
+        # print("uneven width")
         return None
 
     # step2: white check: all connected
     if not keys_is_connected(white_keys):
+        # print("white key not connected")
         return None
 
     # step 3: black check: is between white keys, follows 2 3 2 3
     if not black_is_correct(white_keys, black_keys):
+        # print("black is wrong")
         return None
 
     return white_keys, black_keys
