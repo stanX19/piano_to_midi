@@ -50,28 +50,28 @@ def classify_keys(keys: list[RectType]) -> KeysPairType:
     keys = [k for k in keys if k[2] * 1.5 < k[3]]
     y_classified: list[list[RectType]] = utils.group_data(keys, key=lambda k: k[1])
     yh_classified: list[list[list[RectType]]] = [utils.group_data(row, key=lambda k: k[3]) for row in y_classified]
-    display(y_classified, yh_classified)
-    target_row = None
-    entropy = 0.1  # from 0.0 to 1.0, lower the better
+    # display(y_classified, yh_classified)
+    ret = None
+    entropy = 1.0  # from 0.0 to 1.0, lower the better
     for i, row in enumerate(yh_classified):
         if len(row) < 2:
             continue
-        this_entropy = len(row) / len(y_classified[i])
-        if this_entropy > entropy:
-            continue
-        target_row = row
-        entropy = this_entropy
-    if target_row is None:
-        return [], []
-    black_keys = target_row[-2]
-    white_keys = target_row[-1]
+        for j in range(len(row) - 1):
+            black_keys = row[j]
+            white_keys = row[j + 1]
+            if validate_keys(white_keys, black_keys) is None:
+                continue
+            this_entropy = 1 / (len(white_keys) + len(black_keys))
+            if this_entropy > entropy:
+                continue
+            ret = (white_keys, black_keys)
+            entropy = this_entropy
 
-    return white_keys, black_keys
+    return ret
 
 
 def locate_white_and_black(image: ImageType) -> KeysPairType:
     image = preprocess_image(image)
     keys = detect_rects(image)
     ret = classify_keys(keys)
-    ret = validate_keys(image, *ret)
     return ret
