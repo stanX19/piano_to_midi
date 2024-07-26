@@ -59,42 +59,53 @@ def save_dpf_data_as_midi(name: str, diff_per_frame_data: tuple[float, list[list
     midi.tracks.append(track)
 
     # Set the tempo (microseconds per beat)
-    tempo = mido.bpm2tempo(128)
+    tempo = mido.bpm2tempo(fps * 2)
     track.append(mido.MetaMessage('set_tempo', tempo=tempo))
 
-    threshold = 50
+    threshold = 80
     note_on_velocity = 64  # Velocity for note on messages
-    note_off_velocity = 64  # Velocity for note off messages
+    note_off_velocity = 0  # Velocity for note off messages
 
     time_per_frame = mido.second2tick(1/fps, ticks_per_beat=midi.ticks_per_beat, tempo=tempo)
 
     # Convert dpf data to MIDI events
+    note_on_record = {}
     time_bucket = 0.0
+
+    def add_note_off(_note: int):
+        nonlocal time_bucket, note_on_record
+        if note_on_record.get(_note, 0) == 0:
+            return
+        track.append(mido.Message('note_off', note=_note, velocity=note_off_velocity, time=int(time_bucket)))
+        time_bucket -= int(time_bucket)
+        note_on_record[_note] = 0
+
+    def add_note_on(_note: int):
+        nonlocal time_bucket, note_on_record
+        if note_on_record.get(_note, 0) == 1:
+            add_note_off(_note)
+        track.append(mido.Message('note_on', note=_note, velocity=note_on_velocity, time=int(time_bucket)))
+        time_bucket -= int(time_bucket)
+        note_on_record[_note] = 1
+
     for frame_idx, frame_diff in enumerate(dpf[:-1]):
-        next_frame_diff = dpf[frame_idx + 1]
         time_bucket += time_per_frame
         for key_idx, brightness_diff in enumerate(frame_diff):
-            # Convert key_idx to MIDI note number (example: map to a range of notes)
             note = 24 + key_idx  # Low C (24) as the base note
 
             if brightness_diff > threshold:
-                # Increase in brightness: Note on
-                track.append(mido.Message('note_on', note=note, velocity=note_on_velocity, time=int(time_bucket)))
-                time_bucket -= int(time_bucket)
+                add_note_on(note)
             elif brightness_diff < -threshold:
-                # Decrease in brightness: Note off
-                track.append(mido.Message('note_off', note=note, velocity=note_off_velocity, time=int(time_bucket)))
-                time_bucket -= int(time_bucket)
+                add_note_off(note)
 
-                # special case, no gap
-                if next_frame_diff[key_idx] > threshold:
-                    next_frame_diff[key_idx] = 0
-                    track.append(mido.Message('note_on', note=note, velocity=note_on_velocity, time=int(time_bucket)))
-                    time_bucket -= int(time_bucket)
-
+    for msg in track:
+        msg.time = 0
+        if msg.type == 'note_on':
+            break
     # Save the MIDI file
-    midi.save(f"{directory}/{name}.mid")
-    print(f"saved as {directory}/{name}.mid")
+    filepath = f"{directory}/{name}.mid"
+    midi.save(filepath)
+    print(f"saved as {filepath}")
 
 
 def _convert_one(video_path: str, name: str, use_history: bool, directory: str):
@@ -107,15 +118,30 @@ def _convert_one(video_path: str, name: str, use_history: bool, directory: str):
 
 
 def prompt_for_details(path: str) -> list[str, str, bool]:
-    if os.path.exists(generate_dpf_filepath(path)):
-        enter = ""
-        while enter not in ["y", "yes", "n", "no"]:
-            enter = input("Previous processing record found, skip video processing? [Y/n]: ").lower().strip()
-        use_history = enter in ["y", "yes"]
-    else:
-        use_history = 0
+    # Define the filepath for the existing processing record
+    dpf_filepath = generate_dpf_filepath(path)
 
-    name = input_with_default(f"Video path: {path}\nname?", default=basename(path)).strip()
+    # Check if the file exists and prompt the user accordingly
+    if os.path.exists(dpf_filepath):
+        msg = f"""History found for
+
+    "{pathlib.Path(path).name}"
+
+Skip video processing?"""
+        choice = easygui.buttonbox(
+            msg, title="Processing Record Found", choices=['yes', 'no', 'cancel'], cancel_choice='cancel'
+        )
+        if choice == 'cancel':
+            raise RuntimeError
+        use_history = (choice == 'yes')
+    else:
+        use_history = False
+
+    # Prompt for the name of the video with a default value
+    name = easygui.enterbox(
+        msg=f"Video path: \"{path}\"\n{'[ Use history: Yes ]' if use_history else ''}\nName: ",
+        default=pathlib.Path(path).stem
+    ).strip()
 
     return [path, name, use_history]
 
@@ -126,14 +152,21 @@ def save_video_as_midi(dst_path: str, video_path: Union[list, None] = None):
                                          "D:\\Downloads\\", filetypes=["*.mp4"], multiple=True)
     if video_path is None:
         return
-    if not any(p.endswith(".mp4") for p in video_path):
-        print("Error: Selected file should be mp4 format")
+    if any(not p.endswith(".mp4") for p in video_path):
+        easygui.msgbox("Selected file must be in mp4 format", "Error")
         return
     queue: list[list[str, str, bool]] = []
 
     for path in video_path:
-        args = prompt_for_details(path)
+        try:
+            args = prompt_for_details(path)
+        except RuntimeError:
+            continue
         queue.append(args)
+
+    if not queue:
+        print("???")
+        return
 
     for args in queue:
         try:
@@ -141,9 +174,9 @@ def save_video_as_midi(dst_path: str, video_path: Union[list, None] = None):
         except Exception as exc:
             print(exc)
 
-    if not queue:
-        print("???")
+    easygui.msgbox(f"Files have been saved to {dst_path}", "Processing Complete")
 
 
 if __name__ == '__main__':
-    save_video_as_midi(my_path.data, ["../assets/amygdala_piano.mp4"])
+    # save_video_as_midi(my_path.data, [r"C:\Users\DELL\PycharmProjects\pythonProject\piano_to_midi\assets\amygdala_piano.mp4"])
+    save_video_as_midi(my_path.data)

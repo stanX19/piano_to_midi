@@ -1,7 +1,7 @@
 import cv2
 from my_types import *
 from video_class import VideoClass
-from locate_black_and_white import locate_white_and_black
+from locate_black_and_white import locate_white_and_black, preprocess_image
 
 
 def draw_keys(img, white_keys, black_keys):
@@ -24,3 +24,17 @@ def wait_and_find_keys(video: VideoClass) -> KeysPairType:
         video.display_current_frame()
 
     raise RuntimeError("piano to midi: Failed to locate keys")
+
+
+def test():
+    video = VideoClass(r"D:\Downloads\Eula Flickering Candlelight.mp4")
+    while video.read_next():
+        ret = locate_white_and_black(video.current_frame)
+        # video.current_frame = cv2.cvtColor(preprocess_image(video.current_frame), cv2.COLOR_GRAY2BGR)
+        if ret is not None:
+            draw_keys(video.current_frame, *ret)
+        video.display_current_frame()
+
+
+if __name__ == '__main__':
+    test()
