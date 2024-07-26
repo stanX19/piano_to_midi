@@ -1,21 +1,18 @@
-import numpy as np
 import cv2
-from video_class import VideoClass
-import utils
+import numpy as np
 from my_types import *
-import statistics
+from video_class import VideoClass
 
 
 def get_average_color(image: ImageType, cords: list[CordType]) -> np.ndarray:
-    # Extract pixel values using numpy array indexing
-    pixel_values = np.array([image[y, x] for x, y in cords])
-    # Calculate the average color by taking the mean of RGB values
-    average_color = np.mean(pixel_values, axis=0)
-    return average_color.astype(int)
+    pixel_values = np.array([image[y, x] for x, y in cords])  # [[b, g, r], [b, g, r], ..., [b, g, r]]
+    sum_color = np.sum(pixel_values, axis=0, dtype=np.int32)  # [b_sum, g_sum, r_sum]
+    average_color = sum_color // len(pixel_values)            # [b, g, r]
+    return average_color
 
 
-def color_diff(color1: np.ndarray, color2: np.ndarray) -> int:
-    return int(np.sum(np.abs(color1 - color2)))
+# def color_diff(color1: np.ndarray, color2: np.ndarray) -> int:
+#     return int(np.sum(np.abs(color1 - color2)))
 
 
 def draw_keys(img: ImageType, difference: np.ndarray, keys: list[RectType]):
@@ -23,7 +20,7 @@ def draw_keys(img: ImageType, difference: np.ndarray, keys: list[RectType]):
     WIDTH2 = 3
     COLOR1 = (0, 255, 0)  # Green
     COLOR2 = (0, 0, 255)  # Red
-    THRESHOLD = 50  # Threshold for significant difference in brightness
+    THRESHOLD = 80  # Threshold for significant difference in brightness
 
     for idx, key in enumerate(keys):
         x, y, w, h = key
@@ -36,34 +33,62 @@ def draw_keys(img: ImageType, difference: np.ndarray, keys: list[RectType]):
     return img
 
 
-def interquartile_mean(values: np.ndarray) -> np.ndarray:
-    q25, q75 = np.percentile(values, [25, 75], axis=0)
-    # Filter values between the 25th and 75th percentiles and return the mean as integers
-    iqm_values = values[(values >= q25) & (values <= q75)]
-    return np.mean(iqm_values, axis=0).astype(int)
+def interquartile_rgb_mean(values: np.ndarray) -> np.ndarray:
+    # Calculate luminance for each RGB triplet
+    # [[b, g, r], [b, g, r], ..., [b, g, r]] --> [brightness, brightness, ..., brightness]
+    luminance = np.dot(values, [3, 6, 1])
+
+    # Sort the values based on luminance
+    sorted_indices = np.argsort(luminance)  # gives the index to sort values
+    sorted_values = values[sorted_indices]  # when sorted_indices is int it acts as reordering index
+
+    # Calculate the indices for the 25th and 75th percentiles
+    n = len(sorted_values)
+    q25_idx = n // 4
+    q75_idx = 3 * n // 4
+
+    # Filter the middle 50% of the sorted values
+    interquartile_values = sorted_values[q25_idx:q75_idx + 1]  # [[b, g, r], [b, g, r], ..., [b, g, r]]
+
+    # Compute the mean of the interquartile values
+    iqm_values = np.mean(interquartile_values, axis=0)  # [b_mean, g_mean, r_mean]
+
+    # Convert to integers
+    return iqm_values.astype(int)
 
 
 def get_dpf(video: VideoClass, watch_cords: dict[RectType, list[CordType]], keys: KeysPairType) -> list[list]:
-    black_key_colors = np.array([get_average_color(video.current_frame, watch_cords[key]) for key in keys[1]])
-    white_key_colors = np.array([get_average_color(video.current_frame, watch_cords[key]) for key in keys[0]])
-
-    black_key_color = interquartile_mean(black_key_colors)
-    white_key_color = interquartile_mean(white_key_colors)
-
-    original_colors = np.array([
-        white_key_color if key in keys[0] else black_key_color
-        for key in watch_cords
-    ])
-
     difference_per_frame = []
+    watch_cords_list = list(watch_cords.values())
+    cord_type = np.array([1 if cord in keys[1] else 0 for cord in watch_cords])
+    original_colors = np.full((len(watch_cords), 3), 0)  # [[b, g, r], [b, g, r], ..., [b, g, r]]
+
     while video.read_next():
-        current_colors = np.array([get_average_color(video.current_frame, cords) for cords in watch_cords.values()])
-        difference = np.array([color_diff(orig, curr) for orig, curr in zip(original_colors, current_colors)])
+        current_colors = np.array([get_average_color(video.current_frame, cords) for cords in watch_cords_list],
+                                  dtype=np.int32)  # [[b, g, r], [b, g, r], ..., [b, g, r]]
+
+        # Separate black and white key colors
+        black_key_colors = current_colors[cord_type == 1]  # [[b, g, r], [b, g, r], ..., [b, g, r]]
+        white_key_colors = current_colors[cord_type == 0]  # [[b, g, r], [b, g, r], ..., [b, g, r]]
+
+        # Calculate interquartile RGB mean for black and white keys
+        black_key_color = interquartile_rgb_mean(black_key_colors)  # [b, g, r]
+        white_key_color = interquartile_rgb_mean(white_key_colors)  # [b, g, r]
+
+        # Determine the original colors for each key
+        original_colors[cord_type == 1] = black_key_color
+        original_colors[cord_type == 0] = white_key_color
+
+        # [int, int, ..., int]
+        difference = np.sum(np.abs(current_colors - original_colors), axis=1).astype(int)
+        # print(difference)
         difference_per_frame.append(difference.tolist())
+
+        # Draw keys and display current frame
         draw_keys(video.current_frame, difference, list(watch_cords))
         video.display_current_frame()
 
     # Convert to numpy array for further operations and ensure differences are integers
     dpf = np.diff(np.array(difference_per_frame), axis=0)
-    dpf = dpf.tolist()
+    dpf = dpf.tolist()  # convert to list
     return dpf
