@@ -1,7 +1,7 @@
 import math
 import statistics
 import numpy as np
-from my_types import *
+from p2m_types import *
 from process_rects import remove_duplicate_rectangles
 from typing import Optional, Union
 import utils

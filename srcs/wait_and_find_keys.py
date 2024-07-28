@@ -1,5 +1,5 @@
 import cv2
-from my_types import *
+from p2m_types import *
 from video_class import VideoClass
 from locate_black_and_white import locate_white_and_black, preprocess_image
 

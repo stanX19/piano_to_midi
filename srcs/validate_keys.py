@@ -1,7 +1,7 @@
 import math
 import statistics
 import numpy as np
-from my_types import RectType
+from p2m_types import RectType
 from typing import Optional, Union
 import utils
 
@@ -49,6 +49,9 @@ def keys_is_connected(keys: list[RectType]) -> bool:
     if lowest_xdis < min(width_mean * 0.6, width_mean - 10):
         # print(f"{lowest_xdis=} < {width_mean * 0.6=}")
         return False
+    # TODO:
+    #    add expansion to left and right
+    #    now will miss some keys
     idx = 0
     while idx < len(keys) - 1:
         if keys[idx + 1][0] - keys[idx][0] > lowest_xdis * 1.2:
@@ -96,7 +99,7 @@ def black_is_correct(white_keys: list[RectType], black_keys: list[RectType]) -> 
         group_record.pop(-1)
 
     # TODO:
-    #   add keys completion below
+    #   must add keys completion below, white keys now looks at undetected black keys
     if len(group_record) < 2:
         return False
     if group_record[0] + group_record[1] > 5:

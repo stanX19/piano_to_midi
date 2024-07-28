@@ -1,6 +1,6 @@
 import process_rects
 import utils
-from my_types import *
+from p2m_types import *
 
 
 def rect_contains(rect: RectType, cord: CordType, margin = 5) -> bool:

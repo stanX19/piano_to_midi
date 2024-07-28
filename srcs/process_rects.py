@@ -1,4 +1,4 @@
-from my_types import RectType
+from p2m_types import RectType
 
 
 def remove_duplicate_rectangles(rectangles: list[RectType], tolerance: int = 20) -> list[RectType]:
