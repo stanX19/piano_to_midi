@@ -12,8 +12,9 @@ from validate_keys import validate_keys
 def preprocess_image(img: ImageType) -> ImageType:
     # Use Canny edge detection
     img = cv2.GaussianBlur(img, (3, 3), 0)
-    img = cv2.Canny(img, 150, 200)
-    img = cv2.GaussianBlur(img, (3, 3), 0)
+    img = cv2.Canny(img, 150, 250)
+    cv2.rectangle(img, (0, 0), (img.shape[1] - 1, img.shape[0] - 1), (255, 255, 255), 1)  # add border
+    img = cv2.GaussianBlur(img, (3, 11), 0)
     _, img = cv2.threshold(img, 0, 255, 0)
     return img
 
@@ -47,9 +48,8 @@ def display(y_classified, yh_classified):
 
 
 def classify_keys(keys: list[RectType]) -> KeysPairType:
-    keys = [k for k in keys if k[2] * 1.5 < k[3]]
-    y_classified: list[list[RectType]] = utils.group_data(keys, key=lambda k: k[1])
-    yh_classified: list[list[list[RectType]]] = [utils.group_data(row, key=lambda k: k[3]) for row in y_classified]
+    y_classified: list[list[RectType]] = utils.group_data(keys, key=lambda k: k[1], tolerance=15)
+    yh_classified: list[list[list[RectType]]] = [utils.group_data(row, key=lambda k: k[3], tolerance=10) for row in y_classified]
     # display(y_classified, yh_classified)
     ret = None
     entropy = 1.0  # from 0.0 to 1.0, lower the better
@@ -73,5 +73,6 @@ def classify_keys(keys: list[RectType]) -> KeysPairType:
 def locate_white_and_black(image: ImageType) -> KeysPairType:
     image = preprocess_image(image)
     keys = detect_rects(image)
+    keys = [k for k in keys if k[2] * 1.5 < k[3]]
     ret = classify_keys(keys)
     return ret

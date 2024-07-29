@@ -6,9 +6,10 @@ import utils
 
 
 class VideoClass:
-    def __init__(self, video_path: str):
+    def __init__(self, video_path: str, max_size=(1280, 720)):
         self.name = pathlib.Path(video_path).stem
         self.cap = cv2.VideoCapture(video_path)
+        self.max_size = max_size
         self.eof = False
         self.fps = self.cap.get(cv2.CAP_PROP_FPS)
         self.total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -17,12 +18,12 @@ class VideoClass:
         self._start_time = time.time()
         self._start_frame_count = 0
 
-    def read_next(self, max_size=(1280, 720), *args, **kwargs):
+    def read_next(self):
         """Read the next frame from the video."""
         ret, frame = self.cap.read()
         if ret:
             self.current_frame_count += 1
-            self._current_frame = utils.cv2_resize_to_fit(frame, *max_size)
+            self._current_frame = utils.cv2_resize_to_fit(frame, *self.max_size)
             self.eof = False
         else:
             self.eof = True
@@ -38,13 +39,13 @@ class VideoClass:
             raise ValueError("current frame must be image")
         self._current_frame = img
 
-    def skip_to_frame(self, frame_number: int, **read_kwargs):
+    def skip_to_frame(self, frame_number: int):
         """Skip to a specific frame in the video."""
         if not (0 <= frame_number < self.total_frames):
             raise ValueError("Frame number out of range")
         self.cap.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
         self.current_frame_count = frame_number
-        self.read_next(**read_kwargs)
+        self.read_next()
 
     def get_time_remaining_str(self):
         estimated_time_remaining = self.get_estimated_time_remaining()
@@ -64,7 +65,7 @@ class VideoClass:
         utils.cv2_print_texts(img, message, (200, 200),
                               cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), (200, 200, 200), 1)
 
-    def display_current_frame(self, show_info=True):
+    def display_current_frame(self, delay=1, show_info=True):
         """Display the current frame using OpenCV."""
         if self._current_frame is None:
             raise ValueError("No frame data available to display")
@@ -74,7 +75,7 @@ class VideoClass:
             self.draw_info_on(frame)
 
         cv2.imshow(self.name, frame)
-        return cv2.waitKey(1)
+        return cv2.waitKey(delay)
 
     def has_open_window(self):
         return cv2.getWindowProperty(self.name, cv2.WND_PROP_VISIBLE)

@@ -8,6 +8,7 @@ from process_video import get_dpf
 from video_class import VideoClass
 from wait_and_find_keys import wait_and_find_keys
 from get_watch_cords import get_watch_cords_dict
+import constants
 import mido
 
 
@@ -33,12 +34,13 @@ def load_dpf_from_history(video_path: str):
     return data["fps"], data["dpf"]
 
 
-def video_to_dpf_data(video_path: str, quiet=True) -> tuple[float, DpfType]:
+def video_to_dpf_data(video_path: str) -> tuple[float, DpfType]:
     video = VideoClass(video_path)
     keys = wait_and_find_keys(video)
     watch_cords_dict = get_watch_cords_dict(*keys)
     dpf = get_dpf(video, watch_cords_dict, keys, show_video=True)
     diff_per_frame_data = video.fps, dpf
+    video.release()
 
     filepath = generate_p2m_dpf_filepath(video_path)
     pathlib.Path(filepath).parent.mkdir(parents=True, exist_ok=True)
@@ -56,10 +58,9 @@ def save_dpf_data_as_midi(name: str, source_video_fps: int, difference_per_frame
     track = mido.MidiTrack()
     midi.tracks.append(track)
 
-    tempo = mido.bpm2tempo(fps * 2)
+    tempo = mido.bpm2tempo(178)
     track.append(mido.MetaMessage('set_tempo', tempo=tempo))
 
-    THRESHOLD = 80
     note_on_velocity = 64
     note_off_velocity = 0
 
@@ -89,9 +90,9 @@ def save_dpf_data_as_midi(name: str, source_video_fps: int, difference_per_frame
         for key_idx, brightness_diff in enumerate(frame_diff):
             note = 24 + key_idx  # Low C (24) as the base note
 
-            if brightness_diff > THRESHOLD:
+            if brightness_diff > constants.ON_THRESHOLD:
                 add_note_on(note)
-            elif brightness_diff < -THRESHOLD:
+            elif brightness_diff < -constants.OFF_THRESHOLD:
                 add_note_off(note)
 
     for msg in track:
@@ -144,18 +145,18 @@ Skip video processing?"""
     return [path, name, use_history]
 
 
-def save_video_as_midi(dst_path: str, video_path: Union[list, None] = None):
-    if video_path is None:
-        video_path = easygui.fileopenbox("select designated 720p mp4 file", "Select Video",
+def save_video_as_midi(dst_path: str, video_paths: Union[list[str], None] = None):
+    if video_paths is None:
+        video_paths = easygui.fileopenbox("select designated 720p mp4 file", "Select Video",
                                          "D:\\Downloads\\", filetypes=["*.mp4"], multiple=True)
-    if video_path is None:
+    if video_paths is None:
         return
-    if any(not p.endswith(".mp4") for p in video_path):
+    if any(not p.endswith(".mp4") for p in video_paths):
         easygui.msgbox("Selected file must be in mp4 format", "Error")
         return
     queue: list[list[str, str, bool]] = []
 
-    for path in video_path:
+    for path in video_paths:
         try:
             args = prompt_for_details(path)
         except RuntimeError:

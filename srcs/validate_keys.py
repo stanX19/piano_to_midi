@@ -24,8 +24,8 @@ def is_outlier(data: list[int]) -> list[bool]:
     return [w < lower_bound or w > upper_bound for w in data]
 
 
-def has_uneven_width(keys: list[RectType]) -> bool:
-    widths = [k[2] for k in keys]
+def has_uneven_width(keys: list[RectType], bounds=(0, 1280)) -> bool:
+    widths = [k[2] for k in keys if k[0] > bounds[0] + 3 and k[0] + k[2] < bounds[1] - 3]
 
     if any(is_outlier(widths)):
         return True
@@ -54,7 +54,7 @@ def keys_is_connected(keys: list[RectType]) -> bool:
     #    now will miss some keys
     idx = 0
     while idx < len(keys) - 1:
-        if keys[idx + 1][0] - keys[idx][0] > lowest_xdis * 1.2:
+        if keys[idx + 1][0] - keys[idx][0] > lowest_xdis * 1.5:
             x = keys[idx][0] + max(lowest_xdis, keys[idx][2])
             y = keys[idx][1]
             w = min(width_mean, keys[idx + 1][0] - keys[idx][0] - keys[idx][2])
@@ -66,9 +66,11 @@ def keys_is_connected(keys: list[RectType]) -> bool:
     tolerance = max(keys_xdis_grouped[0]) - min(keys_xdis_grouped[0]) + 5
     keys_xdis = [keys[i][0] - keys[i - 1][0] for i in range(1, len(keys))]
     keys_xdis_grouped = utils.group_data(keys_xdis, tolerance=tolerance)
+    # # print(f"{keys_xdis=}")
     # # print(f"{keys_xdis_grouped=}")
 
     if len(keys_xdis_grouped) > 1:  # if there's missing keys
+        # print("still have missing keys")
         return False
     return True
 
@@ -77,6 +79,9 @@ def black_is_correct(white_keys: list[RectType], black_keys: list[RectType]) -> 
     # loop through white and black with index using while loop
     # record 2 3 2 3 2 in process, last_break = 3 means current break must be 2, vice versa, left right exclude
     # black x > white x means next
+    if len(black_keys) < 5:
+        # print("not enough black keys")
+        return False
     black_idx = 0
     white_idx = 0
     group_record: list[int] = []
@@ -111,7 +116,9 @@ def black_is_correct(white_keys: list[RectType], black_keys: list[RectType]) -> 
             return False
         if group + group_record[idx + 1] != 5:
             return False
-
+    max_height = max(k[3] for k in black_keys)
+    for idx, (x, y, w, h) in enumerate(black_keys):
+        black_keys[idx] = (x, y, w, max_height)
     # # print(f"{group_record=}")
     return True
 
