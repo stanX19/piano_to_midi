@@ -8,6 +8,7 @@ from process_video import get_dpf
 from video_class import VideoClass
 from wait_and_find_keys import wait_and_find_keys
 from get_watch_cords import get_watch_cords_dict
+from p2m_exception import *
 import constants
 import mido
 
@@ -58,7 +59,7 @@ def save_dpf_data_as_midi(name: str, source_video_fps: int, difference_per_frame
     track = mido.MidiTrack()
     midi.tracks.append(track)
 
-    tempo = mido.bpm2tempo(178)
+    tempo = mido.bpm2tempo(240)
     track.append(mido.MetaMessage('set_tempo', tempo=tempo))
 
     note_on_velocity = 64
@@ -129,7 +130,7 @@ Skip video processing?"""
             msg, title="Processing Record Found", choices=['cancel', 'no', 'yes'], cancel_choice='cancel'
         )
         if choice == 'cancel':
-            raise RuntimeError("cancelled")
+            raise OperationCancelledException()
         use_history = (choice == 'yes')
     else:
         use_history = False
@@ -140,7 +141,7 @@ Skip video processing?"""
         default=_basename(path)
     )
     if name is None:
-        raise RuntimeError("cancelled")
+        raise OperationCancelledException()
     name = name.strip()
     return [path, name, use_history]
 
@@ -159,7 +160,7 @@ def save_video_as_midi(dst_path: str, video_paths: Union[list[str], None] = None
     for path in video_paths:
         try:
             args = prompt_for_details(path)
-        except RuntimeError:
+        except OperationCancelledException:
             continue
         queue.append(args)
 

@@ -58,6 +58,15 @@ def interquartile_rgb_mean(values: np.ndarray) -> np.ndarray:
     return iqm_values
 
 
+# TODO:
+#   either just use brightness and no rgb
+#   or combine difference_from_prev_frame and difference_from_original to get accurate results
+#       if diff_from_prev_frame > THRESHOLD and difference_from_original > THRESHOLD:
+#           note_on
+#       if diff_from_prev_frame > THRESHOLD and difference_from_original < THRESHOLD:
+#           note_off
+
+
 def process_video_func(video: VideoClass, watch_cords: dict[RectType, list[CordType]],
                        keys: KeysPairType, difference_per_frame: list[np.ndarray]):
     watch_cords_values = list(watch_cords.values())
