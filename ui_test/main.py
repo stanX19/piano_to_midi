@@ -1,8 +1,7 @@
-import customtkinter as ctk
 import pathlib
-import re
 from typing import Callable, Any, Union
 
+import customtkinter as ctk
 
 # Set appearance and theme
 
@@ -20,22 +19,23 @@ class StepInterface(ctk.CTkFrame):
         self.grid_rowconfigure(1, weight=1)
 
         # Title frame
-        self.title_frame = ctk.CTkFrame(self, height=0)
-        self.title_frame.grid(row=0, column=0, pady=5, padx=5, sticky='nsew')
-
-        self.title_label = ctk.CTkLabel(self.title_frame, text=title, font=("Arial", 16, "bold"))
-        self.title_label.pack(pady=5, padx=5)
+        self.title_frame = ctk.CTkFrame(self)
+        self.title_frame.grid(row=0, pady=(5, 0), padx=5, sticky="ew")
 
         # Content frame
         self.content_frame = ctk.CTkFrame(self)
-        self.content_frame.grid(row=1, column=0, padx=5, pady=0, sticky='nsew')
+        self.content_frame.grid(row=1, column=0, padx=5, pady=(5, 0), sticky='nsew')
 
-        self.error_label = ctk.CTkLabel(self.content_frame, text="", text_color="red")
-        self.error_label.pack(side=ctk.BOTTOM)
+        self.error_label = ctk.CTkLabel(self, text="", text_color="red")
+        self.error_label.grid(row=2, column=0, sticky="ew")
+
+        font_size = 32
+        self.title_label = ctk.CTkLabel(self.title_frame, text=title, font=("Arial", font_size, "bold"))
+        self.title_label.pack(pady=font_size // 2, padx=font_size // 2)
 
         # Button frame
         self.button_frame = ctk.CTkFrame(self)
-        self.button_frame.grid(row=2, column=0, pady=5, padx=5, sticky='ew')
+        self.button_frame.grid(row=3, column=0, pady=5, padx=5, sticky='ew')
 
         self.next_button = ctk.CTkButton(self.button_frame, text="Next", command=self._on_next, width=0)
         self.next_button.pack(side=ctk.RIGHT, padx=5)
@@ -59,7 +59,11 @@ class StepInterface(ctk.CTkFrame):
         return self._result_handler_func("next")
 
     def on_cancel(self):
+        self.reset()
         return self._result_handler_func(CANCEL_STR)
+
+    def reset(self):
+        pass
 
     def show(self):
         self._active = True
@@ -68,6 +72,7 @@ class StepInterface(ctk.CTkFrame):
     def hide(self):
         self._active = False
         self.pack_forget()
+
 
 #
 # class InterfaceManager:
@@ -194,7 +199,7 @@ class InputFrame(StepInterface):
     def __init__(self, root: ctk.CTk, title: str, result_handler_func: Callable[[str], Any],
                  description="Input:", default=""):
         super().__init__(root, title, result_handler_func)
-        self.description_label = ctk.CTkLabel(self.content_frame, text=description, justify=ctk.LEFT)
+        self.description_label = ctk.CTkLabel(self.content_frame, text=description, justify=ctk.LEFT, height=32)
         self.description_label.pack(side=ctk.TOP, anchor=ctk.NW, pady=5, padx=5, fill=ctk.BOTH, expand=True)
         self.entry = ctk.CTkEntry(self.content_frame)
         self.entry.insert(0, default)
@@ -205,19 +210,60 @@ class InputFrame(StepInterface):
         return self._result_handler_func(self.entry.get())
 
 
-class SelectFileFrame(StepInterface):
-    def __init__(self, root: ctk.CTk, title: str, result_handler_func: Callable[[str], Any],
-                 force_extension=None):
-        super().__init__(root, title, result_handler_func)
-        self.entry_frame = ctk.CTkFrame(self.content_frame)
-        self.entry_frame.pack(padx=5, pady=5, expand=True, fill=ctk.X)
-        self.entry = ctk.CTkEntry(self.entry_frame)
-        self.entry.pack(side=ctk.LEFT, expand=True, fill=ctk.X)
-        self.entry.bind("<Return>", lambda event: self.next_button.invoke())
-        self.select_file_button = ctk.CTkButton(self.entry_frame, text="Select file", command=self.select_file, width=0)
-        self.select_file_button.pack(side=ctk.RIGHT)
+class MonitoredEntry(ctk.CTkEntry):
+    def __init__(self, master, *args, **kwargs):
+        self.string_var = ctk.StringVar()
+        self._on_write = lambda s: s
+        self.string_var.trace_add("write", lambda _: self._on_write(self.get()))
+        super(MonitoredEntry, self).__init__(master, *args, **kwargs)
 
-        self._force_extension = re.sub(r'^[.*]+', '', force_extension) if force_extension else None
+    def hook_on_write(self, func: Callable[[str], Any]):
+        self._on_write = func
+
+
+class HomeFrame(StepInterface):
+    """
+    Behaviour1:
+    - one local video file, no pop up
+
+    Behaviour2:
+    - multiple local videos, pop up below
+
+    Behaviour3:
+    - Youtube video url, pop up below
+    """
+
+    def __init__(self, root: ctk.CTk, result_handler_func: Callable[[str], Any]):
+        super().__init__(root, "Home", result_handler_func)
+        self.content_frame.grid_rowconfigure(0, weight=1)
+        self.content_frame.grid_rowconfigure(1, weight=1)
+        self.content_frame.grid_columnconfigure(0, weight=1)
+        self.entry_frame = ctk.CTkFrame(self.content_frame)
+        self.entry_frame.grid(row=0, column=0, padx=5, pady=(5, 0), ipadx=15, ipady=15, sticky="new")
+
+        self.entry_frame.grid_columnconfigure(0, weight=1)  # Configure column 0 to expand
+        self.top_left_label = ctk.CTkLabel(self.entry_frame,
+                                           text="Please enter a valid file path or YouTube video URL:")
+        self.top_left_label.grid(row=0, column=0, columnspan=3, sticky="w", padx=5, pady=(5, 0))
+        self.entry = ctk.CTkEntry(self.entry_frame, corner_radius=100,
+                                  placeholder_text="C:/Downloads/piano_synthesia_video.mp4")
+        self.entry.grid(row=1, column=0, ipadx=32, ipady=12, sticky="ew", padx=(5, 0), pady=5)
+        self.entry.bind("<Return>", lambda event: self.add_to_queue())
+
+        self.convert_button = ctk.CTkButton(self.entry_frame, text="Add to queue", command=self.add_to_queue, width=0,
+                                            corner_radius=10000)
+        self.convert_button.grid(row=1, column=1, ipadx=32, ipady=12)
+
+        self.select_file_button = ctk.CTkButton(self.entry_frame, text="Select file", command=self.select_file, width=0,
+                                                corner_radius=10000)
+        self.select_file_button.grid(row=1, column=2, ipadx=32, ipady=12, padx=(0, 5))
+
+        self.queue_frame = ctk.CTkScrollableFrame(self.content_frame)
+        self.queue_frame.grid(row=1, column=0, padx=5, pady=(5, 5), ipadx=15, ipady=15, sticky="ew")
+
+        self.queue = []
+
+        self._force_extension = "mp4"
 
     def get_extension_pattern(self):
         return f"*.{self._force_extension}" if self._force_extension else '*.*'
@@ -233,14 +279,19 @@ class SelectFileFrame(StepInterface):
         self.entry.delete(0, ctk.END)
         self.entry.insert(0, filepath)
 
-    def on_next(self):
-        filepath = pathlib.Path(self.entry.get())
-        if not filepath.exists():
-            self.error_label.configure(text="Invalid file path")
-        elif not filepath.match(self.get_extension_pattern()):
-            self.error_label.configure(text=f"Is not a {self._force_extension} file")
+    def add_to_queue(self):
+        path = pathlib.Path(self.entry.get())
+        if path.is_file() and path.match(self.get_extension_pattern()):
+            self.queue.append(str(path))
+            self.entry.delete(0, ctk.END)
         else:
-            self._result_handler_func(filepath.__str__())
+            self.error_label.configure(text="Invalid path or url")
+
+    def on_next(self):
+        if not self.queue:
+            self.add_to_queue()
+        if self.queue:
+            super().on_next()
 
 
 class App(ctk.CTk):
@@ -251,70 +302,35 @@ class App(ctk.CTk):
         self.width = width
         self.height = height
         self.queue = []
-        self._frame_history: list[StepInterface] = []
-        self._steps: list[Callable] = [
-            self.select_video,
-            self.get_details,
-            self.process_video
+        self._current_frame: Union[None, StepInterface] = None
+        self._frames: list[StepInterface] = [
+            HomeFrame(self, self.choose_frame),
+            InputFrame(self, "Save as", self.choose_frame, f"Name: ", default="Unnamed"),
+            StepInterface(self, "Confirmation", self.choose_frame),
         ]
-        self._idx = 0
-        self.select_video()
-
-    @property
-    def current_frame(self):
-        if not self._frame_history:
-            return None
-        return self._frame_history[-1]
-
-    @current_frame.setter
-    def current_frame(self, new_frame):
-        if not isinstance(new_frame, StepInterface):
-            return
-        # start of steps
-        if not self._frame_history:
-            new_frame.show()
-            self._frame_history.append(new_frame)
-            return
-        # repeated
-        if new_frame is self._frame_history[-1]:
-            return
-        # need to hide and show
-        self._frame_history[-1].hide()
-        if new_frame not in self._frame_history:
-            self._frame_history.append(new_frame)
-        else:
-            self._frame_history = self._frame_history[:self._frame_history.index(new_frame) + 1]
-        new_frame.show()
+        self._idx: int = 0
+        self.current_frame = self._frames[0]
 
     def choose_frame(self, ret_val):
         if ret_val == CANCEL_STR:
             self._idx -= 1
-            if self._frame_history.__len__() >= 2:
-                self.current_frame = self._frame_history[-2]
-            return
-        elif self._idx + 1 >= self._steps.__len__():
-            self.quit()
         else:
             self._idx += 1
-        self._steps[self._idx](ret_val)
+        if self._idx < 0 or self._idx >= len(self._frames):
+            self.quit()
+        self.current_frame = self._frames[self._idx]
 
-    def select_video(self, *args):
-        self.current_frame = SelectFileFrame(self, "Piano to midi - convert piano videos to midi", self.choose_frame,
-                                             force_extension=".mp4")
-        self.current_frame.cancel_button.pack_forget()
+    @property
+    def current_frame(self):
+        return self._current_frame
 
-    def get_details(self, filepath: str):
-        default = pathlib.Path(filepath).stem
-        self.current_frame = InputFrame(self, "Save as", self.choose_frame,
-                                        f"Video path: {filepath}\nName: ", default=default)
-
-    def process_video(self, path):
-        self.current_frame = StepInterface(self, "Confirmation", self.choose_frame)
-        info_label = ctk.CTkLabel(self.current_frame.content_frame,
-                                  text=f"Video path: {path}\nUse history: {False}\nName: {path}",
-                                  font=("Consolas", 16),
-                                  justify=ctk.LEFT, wraplength=300)
-        info_label.pack(fill=ctk.BOTH, pady=(10, 0), expand=True)
+    @current_frame.setter
+    def current_frame(self, new_frame):
+        if isinstance(self._current_frame, StepInterface):
+            self._current_frame.hide()
+        self._current_frame = new_frame
+        if isinstance(new_frame, StepInterface):
+            new_frame.show()
 
 
 def main():
