@@ -87,8 +87,8 @@ class QueueItemEditFrame(QueueItemBaseFrame):
                                           state="normal")
 
         # Checkbox
-        self.remove_button = ctk.CTkButton(self.container_frame, text="Unselect", width=0)
-        self.reset_button = ctk.CTkButton(self.container_frame, text="Reset", width=0)
+        self.remove_button = ctk.CTkButton(self.container_frame, text="Unselect", width=0, command=self._on_unselect)
+        self.reset_button = ctk.CTkButton(self.container_frame, text="Reset", width=0, command=self.data.reset_title)
 
         # Pack and grid all components
         self.index_label.pack(expand=True)
@@ -97,10 +97,10 @@ class QueueItemEditFrame(QueueItemBaseFrame):
         self.src_path_label.grid(row=0, column=2, padx=(5, 5), pady=(5, 0), ipadx=5, ipady=0, sticky="nsew")
         self.save_as_label.grid(row=1, column=1, padx=(5, 5), pady=(0, 5), sticky="nsew")
         self.save_as_entry.grid(row=1, column=2, padx=(5, 5), pady=(0, 5), ipadx=5, ipady=0, sticky="nsew")
-        self.remove_button.grid(row=0, column=3, padx=5, pady=5, ipady=5, ipadx=5, sticky="nsew")
-        self.reset_button.grid(row=1, column=3, padx=5, pady=5, ipady=5, ipadx=5, sticky="nsew")
+        self.remove_button.grid(row=0, column=3, padx=5, pady=(10, 5), ipady=5, ipadx=5, sticky="nsew")
+        self.reset_button.grid(row=1, column=3, padx=5, pady=(0, 5), ipady=5, ipadx=5, sticky="nsew")
 
-    def on_remove(self):
+    def _on_unselect(self):
         self.remove_button.configure(state=ctk.DISABLED)
         self.data.is_selected_var.set(False)
         self._unselect_callback_func()
