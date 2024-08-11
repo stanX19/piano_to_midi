@@ -8,7 +8,7 @@ import constants
 
 def get_average_color(image: ImageType, cords: list[CordType]) -> np.ndarray:
     pixel_values = np.array([image[y, x] for x, y in cords])  # [[b, g, r], [b, g, r], ..., [b, g, r]]
-    sum_color = np.sum(pixel_values, axis=0, dtype=np.int32)  # [b_sum, g_sum, r_sum]
+    sum_color: np.ndarray = np.sum(pixel_values, axis=0, dtype=np.int32)  # [b_sum, g_sum, r_sum]
     average_color = sum_color // len(pixel_values)            # [b, g, r]
     return average_color
 
@@ -121,6 +121,6 @@ def get_dpf(video: VideoClass, watch_cords: dict[RectType, list[CordType]], keys
 
     processing_thread.join()
 
-    dpf = np.diff(np.array(difference_per_frame), axis=0)
-    dpf = dpf.astype(int).tolist()  # convert to list
-    return dpf
+    dpf: np.ndarray = np.diff(np.array(difference_per_frame), axis=0)
+    list_dpf: list[list[int]] = dpf.astype(int).tolist()  # convert to list
+    return list_dpf
