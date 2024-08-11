@@ -15,21 +15,20 @@ class QueueItemBaseFrame(ctk.CTkFrame):
         if self.winfo_viewable():
             return
         self.grid_forget()
-        self.refresh()
-        self.update_idletasks()
         self.grid(row=self.idx, column=0, ipadx=0, ipady=0, padx=5, pady=(5, 0), sticky="nsew")
 
     def hide(self):
         self.grid_forget()
 
-    def change_data(self, data: QueueData):
-        if self.data is data:
+    def set_idx(self, idx: int):
+        if idx == self.idx:
             return
-        self.data = data
-        self.refresh()
+        self.idx = idx
+        self._refresh_idx()
 
-    def refresh(self):
+    def _refresh_idx(self):
         pass
+
 
 
 class QueueItemFrame(QueueItemBaseFrame):
@@ -54,84 +53,8 @@ class QueueItemFrame(QueueItemBaseFrame):
         self.content_entry.grid(row=1, column=1, padx=(5, 5), pady=5, ipadx=5, ipady=5, sticky="nsew")
         self.checkbox.grid(row=0, rowspan=2, column=2, padx=0, pady=5, ipady=5, sticky="nsew")
 
-    def refresh(self):
-        self.content_entry.configure(textvariable=self.data.src_filename_var)
-        self.checkbox.configure(variable=self.data.is_selected_var)
+    def _refresh_idx(self):
         self.index_label.configure(text=str(self.idx))
-
-
-class QueueContainerFrame(ctk.CTkScrollableFrame):
-    def __init__(self, master, queue_manager: QueueManager, *args, **kwargs):
-        super().__init__(master, *args, **kwargs)
-        self.queue_manager: QueueManager = queue_manager
-        self.queue_frame_list: list[QueueItemBaseFrame] = []
-
-        default_font = ctk.ThemeManager.theme["CTkLabel"]["text_color"]
-        default_colors1 = ctk.ThemeManager.theme["CTkFrame"]["fg_color"]
-        default_colors2 = ctk.ThemeManager.theme["CTkFrame"]["top_fg_color"]
-        text_color = default_colors1 if self.cget('fg_color') is not default_colors1 else default_colors2
-        self.queue_is_empty_label: ctk.CTkLabel = ctk.CTkLabel(self, text="Queue is empty",
-                                                               font=(default_font[0], 36, "bold"),
-                                                               text_color=text_color)
-        self.grid_columnconfigure(0, weight=1)
-        self._refresh_thread: Union[None, Thread] = None
-        self._refresh_needed: bool = False
-        self.refresh()
-
-    def refresh(self):
-        print("refresh called")
-        if self._refresh_thread:
-            self._refresh_needed = True
-            print("refresh ongoing, queued")
-            return
-        self._refresh_thread = Thread(target=self._refresh)
-        self._refresh_thread.start()
-
-    def _refresh(self) -> None:
-        print("refreshing")
-        # Update existing frames
-        queue_list = self.get_queue_data()
-        min_len = min(len(queue_list), len(self.queue_frame_list))
-
-        for idx in range(min_len):
-            frame = self.queue_frame_list[idx]
-            data = queue_list[idx]
-            frame.change_data(data)
-
-        # add missing frames
-        for idx in range(min_len, len(queue_list)):
-            data = queue_list[idx]
-            frame = self.get_new_item_frame(data)
-            self.queue_frame_list.append(frame)
-
-        # remove extra frames
-        if len(self.queue_frame_list) > len(queue_list):
-            for frame in self.queue_frame_list[len(queue_list):]:
-                frame.destroy()
-            self.queue_frame_list = self.queue_frame_list[:len(queue_list)]
-
-        for frame in self.queue_frame_list:
-            frame.show()
-
-        if not self.queue_frame_list:
-            self.queue_is_empty_label.grid(row=0, pady=0)
-        else:
-            self.queue_is_empty_label.grid_forget()
-        self.after(0, self._end_refresh)
-        print("refresh done")
-
-    def _end_refresh(self):
-        self._refresh_thread.join()
-        self._refresh_thread = None
-        if self._refresh_needed:
-            self._refresh_needed = False
-            self.refresh()
-
-    def get_queue_data(self):
-        return self.queue_manager.queue_list
-
-    def get_new_item_frame(self, data) -> QueueItemBaseFrame:
-        return QueueItemFrame(self, data, len(self.queue_frame_list) + 1)
 
 
 class QueueItemEditFrame(QueueItemBaseFrame):
@@ -164,7 +87,7 @@ class QueueItemEditFrame(QueueItemBaseFrame):
                                           state="normal")
 
         # Checkbox
-        self.remove_button = ctk.CTkButton(self.container_frame, text="Remove", width=0)
+        self.remove_button = ctk.CTkButton(self.container_frame, text="Unselect", width=0)
         self.reset_button = ctk.CTkButton(self.container_frame, text="Reset", width=0)
 
         # Pack and grid all components
@@ -182,13 +105,59 @@ class QueueItemEditFrame(QueueItemBaseFrame):
         self.data.is_selected_var.set(False)
         self._unselect_callback_func()
 
-    def refresh(self):
-        self.src_path_label.configure(textvariable=self.data.src_filename_var)
-        self.save_as_entry.configure(textvariable=self.data.title_var)
+    def _refresh_idx(self):
         self.index_label.configure(text=str(self.idx))
-        self.remove_button.configure(state=ctk.NORMAL)
-        self.remove_button.configure(command=self.on_remove)
-        self.reset_button.configure(command=self.data.reset_title)
+
+
+class QueueContainerFrame(ctk.CTkScrollableFrame):
+    def __init__(self, master, queue_manager: QueueManager, *args, **kwargs):
+        super().__init__(master, *args, **kwargs)
+        self.queue_manager: QueueManager = queue_manager
+        self.queue_frame_list: list[QueueItemBaseFrame] = []
+
+        default_font = ctk.ThemeManager.theme["CTkLabel"]["text_color"]
+        default_colors1 = ctk.ThemeManager.theme["CTkFrame"]["fg_color"]
+        default_colors2 = ctk.ThemeManager.theme["CTkFrame"]["top_fg_color"]
+        text_color = default_colors1 if self.cget('fg_color') is not default_colors1 else default_colors2
+        self.queue_is_empty_label: ctk.CTkLabel = ctk.CTkLabel(self, text="Queue is empty",
+                                                               font=(default_font[0], 36, "bold"),
+                                                               text_color=text_color)
+        self.grid_columnconfigure(0, weight=1)
+        self.refresh()
+
+    def refresh(self) -> None:
+        # Update existing frames
+        queue_list = self.get_queue_data()
+        frame_dict: dict[QueueData, QueueItemBaseFrame] = {
+            frame.data: frame for frame in self.queue_frame_list
+        }
+        self.queue_frame_list = []
+        for idx, data in enumerate(queue_list, start=1):
+            if data in frame_dict:
+                frame = frame_dict[data]
+            else:
+                frame = self.get_new_item_frame(data)
+            frame.set_idx(idx)
+            self.queue_frame_list.append(frame)
+
+        for frame in self.queue_frame_list:
+            frame.show()
+
+        for frame in frame_dict.values():
+            if frame not in self.queue_frame_list:
+                frame.destroy()
+
+        # queue empty text
+        if not self.queue_frame_list:
+            self.queue_is_empty_label.grid(row=0, pady=0)
+        else:
+            self.queue_is_empty_label.grid_forget()
+
+    def get_queue_data(self):
+        return self.queue_manager.queue_list
+
+    def get_new_item_frame(self, data) -> QueueItemBaseFrame:
+        return QueueItemFrame(self, data, len(self.queue_frame_list) + 1)
 
 class QueueEditContainerFrame(QueueContainerFrame):
     def __init__(self, master, queue_manager: QueueManager, *args, **kwargs):
