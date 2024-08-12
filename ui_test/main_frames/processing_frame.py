@@ -3,9 +3,9 @@ from typing import Callable, Any, Union
 
 import customtkinter as ctk
 
-from ui_test.ui_classes import StepInterface, CANCEL_STR
+from ui_test.ui_classes import StepInterface
 from ui_test.ui_classes import QueueManager
-from ui_test.ui_classes import QueueEditContainerFrame
+from ui_test.ui_classes import QueueProcessContainerFrame
 
 
 class ProcessingFrame(StepInterface):
@@ -15,8 +15,7 @@ class ProcessingFrame(StepInterface):
 
         self.content_frame.grid_rowconfigure(0, weight=1)
         self.content_frame.grid_columnconfigure(0, weight=1)
-
-        self.queue_frame = QueueEditContainerFrame(self.content_frame, queue_manager)
+        self.queue_frame = QueueProcessContainerFrame(self.content_frame, queue_manager)
         self.queue_frame.grid(row=0, column=0, padx=5, pady=(5, 5), ipadx=15, ipady=15, sticky="nsew")
 
     def show(self):

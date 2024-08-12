@@ -15,7 +15,7 @@ class QueueItemBaseFrame(ctk.CTkFrame):
         if self.winfo_viewable():
             return
         self.grid_forget()
-        self.grid(row=self.idx, column=0, ipadx=0, ipady=0, padx=5, pady=(5, 0), sticky="nsew")
+        self.grid(row=self.idx, column=0, ipadx=0, ipady=0, padx=(5, 0), pady=(5, 0), sticky="nsew")
 
     def hide(self):
         self.grid_forget()
@@ -109,66 +109,55 @@ class QueueItemEditFrame(QueueItemBaseFrame):
         self.index_label.configure(text=str(self.idx))
 
 
-class QueueContainerFrame(ctk.CTkScrollableFrame):
-    def __init__(self, master, queue_manager: QueueManager, *args, **kwargs):
-        super().__init__(master, *args, **kwargs)
-        self.queue_manager: QueueManager = queue_manager
-        self.queue_frame_list: list[QueueItemBaseFrame] = []
+class QueueItemProcessFrame(QueueItemBaseFrame):
+    def __init__(self, master, data: QueueData, idx: int):
+        super().__init__(master, data, idx)
 
-        default_font = ctk.ThemeManager.theme["CTkLabel"]["text_color"]
-        default_colors1 = ctk.ThemeManager.theme["CTkFrame"]["fg_color"]
-        default_colors2 = ctk.ThemeManager.theme["CTkFrame"]["top_fg_color"]
-        text_color = default_colors1 if self.cget('fg_color') is not default_colors1 else default_colors2
-        self.queue_is_empty_label: ctk.CTkLabel = ctk.CTkLabel(self, text="Queue is empty",
-                                                               font=(default_font[0], 36, "bold"),
-                                                               text_color=text_color)
-        self.grid_columnconfigure(0, weight=1)
-        self.refresh()
+        self.container_frame = ctk.CTkFrame(self)
+        self.container_frame.pack(fill=ctk.BOTH)
+        self.container_frame.grid_columnconfigure(0, weight=0)  # labels
+        self.container_frame.grid_columnconfigure(1, weight=1)  # status and save_as
+        self.container_frame.grid_columnconfigure(2, weight=0)  # buttons
+        self.container_frame.grid_rowconfigure(0, weight=1)     # video frame
+        self.container_frame.grid_rowconfigure(1, weight=0)     # progress bar
+        self.container_frame.grid_rowconfigure(2, weight=0)     # line 1
+        self.container_frame.grid_rowconfigure(3, weight=0)     # line 2
 
-    def refresh(self) -> None:
-        # Update existing frames
-        queue_list = self.get_queue_data()
-        frame_dict: dict[QueueData, QueueItemBaseFrame] = {
-            frame.data: frame for frame in self.queue_frame_list
-        }
-        self.queue_frame_list = []
-        for idx, data in enumerate(queue_list, start=1):
-            if data in frame_dict:
-                frame = frame_dict[data]
-            else:
-                frame = self.get_new_item_frame(data)
-            frame.set_idx(idx)
-            self.queue_frame_list.append(frame)
+        self.video_container_frame = ctk.CTkFrame(self.container_frame)
+        self.video_frame = ctk.CTkFrame(self.video_container_frame, width=640, height=360)
+        self.video_frame.pack(padx=5, pady=5)
 
-        for frame in self.queue_frame_list:
-            frame.show()
+        self.progress_bar = ctk.CTkProgressBar(self.container_frame)
 
-        for frame in frame_dict.values():
-            if frame not in self.queue_frame_list:
-                frame.destroy()
+        self.status_text_label = ctk.CTkLabel(self.container_frame, text="Status", anchor=ctk.E)
+        self.save_as_text_label = ctk.CTkLabel(self.container_frame, text="Saving as", anchor=ctk.E)
+        self.status_label = ctk.CTkLabel(self.container_frame, text="Processing...", anchor=ctk.W)
+        self.save_as_label = ctk.CTkLabel(self.container_frame, text=data.title_var.get() + ".mid", anchor=ctk.W)
 
-        # queue empty text
-        if not self.queue_frame_list:
-            self.queue_is_empty_label.grid(row=0, pady=0)
-        else:
-            self.queue_is_empty_label.grid_forget()
+        self.pause_btn = ctk.CTkButton(self.container_frame, text="Pause", command=self.on_pause)
+        self.change_btn = ctk.CTkButton(self.container_frame, text="Change", command=self.on_change)
 
-    def get_queue_data(self):
-        return self.queue_manager.queue_list
+        self.video_container_frame.grid(row=0, column=0, columnspan=3, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
+        self.progress_bar.grid(row=1, column=0, columnspan=3, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
+        self.status_text_label.grid(row=2, column=0, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
+        self.save_as_text_label.grid(row=3, column=0, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
+        self.status_label.grid(row=2, column=1, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
+        self.save_as_label.grid(row=3, column=1, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
+        self.pause_btn.grid(row=2, column=2, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
+        self.change_btn.grid(row=3, column=2, padx=5, pady=(5, 5), ipadx=5, sticky="nsew")
 
-    def get_new_item_frame(self, data) -> QueueItemBaseFrame:
-        return QueueItemFrame(self, data, len(self.queue_frame_list) + 1)
+    def on_pause(self):
+        print("pause!")
+        self.pause_btn.configure(text="Resume", command=self.on_resume)
 
-class QueueEditContainerFrame(QueueContainerFrame):
-    def __init__(self, master, queue_manager: QueueManager, *args, **kwargs):
-        super().__init__(master, queue_manager, *args, **kwargs)
+    def on_resume(self):
+        print("Resume")
+        self.pause_btn.configure(text="Pause", command=self.on_pause)
 
-    def get_queue_data(self):
-        return self.queue_manager.selected_list
 
-    def get_new_item_frame(self, data):
-        return QueueItemEditFrame(self, data, len(self.queue_frame_list) + 1,
-                                  unselect_callback_func=self.unselect_data_callback)
+    def on_change(self):
+        print("change? no change")
+        self.change_btn.configure(state=ctk.DISABLED)
 
-    def unselect_data_callback(self):
-        self.refresh()
+    def update_progress_bar(self):
+        pass
