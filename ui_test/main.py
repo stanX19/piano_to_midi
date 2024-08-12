@@ -3,7 +3,7 @@ import time
 from typing import Callable, Any, Union
 import customtkinter as ctk
 import tkinter as tk
-from ui_classes import StepInterface, CANCEL_STR, QueueManager
+from main_frames.ui_classes import StepInterface, CANCEL_STR, QueueManager
 from main_frames import HomeFrame, ConfirmationFrame, ProcessingFrame
 
 

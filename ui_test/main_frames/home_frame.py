@@ -3,9 +3,9 @@ from typing import Callable, Any, Union
 
 import customtkinter as ctk
 
-from ui_test.ui_classes import StepInterface, CANCEL_STR
-from ui_test.ui_classes import QueueManager
-from ui_test.ui_classes import QueueContainerFrame
+from .ui_classes import StepInterface, CANCEL_STR
+from .ui_classes import QueueManager
+from .ui_classes import QueueContainerFrame
 
 
 class PathEntryFrame(ctk.CTkFrame):
