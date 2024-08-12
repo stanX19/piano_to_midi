@@ -3,8 +3,8 @@ import time
 from typing import Callable, Any, Union
 import customtkinter as ctk
 import tkinter as tk
-from ui_classes import StepInterface, CANCEL_STR, QueueManager
-from main_frames import HomeFrame, ConfirmationFrame, ProcessingFrame
+from ui_test.ui_classes import StepInterface, CANCEL_STR, QueueManager
+from ui_test.main_frames import HomeFrame, ConfirmationFrame, ProcessingFrame
 
 
 class ScalableApp(ctk.CTk):
