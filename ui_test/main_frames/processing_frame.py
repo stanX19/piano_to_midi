@@ -3,14 +3,14 @@ from typing import Callable, Any, Union
 
 import customtkinter as ctk
 
-from .templates import StepInterface, CANCEL_STR
-from .queue_manager import QueueManager
-from .queue_frame import QueueEditContainerFrame
+from ui_test.ui_classes import StepInterface, CANCEL_STR
+from ui_test.ui_classes import QueueManager
+from ui_test.ui_classes import QueueEditContainerFrame
 
 
-class ConfirmationFrame(StepInterface):
+class ProcessingFrame(StepInterface):
     def __init__(self, master: ctk.CTk, result_handler_func: Callable[[str], Any], queue_manager: QueueManager):
-        super().__init__(master, "Preparation", result_handler_func)
+        super().__init__(master, "Processing", result_handler_func)
         self.queue_manager = queue_manager
 
         self.content_frame.grid_rowconfigure(0, weight=1)

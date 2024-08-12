@@ -1,4 +1,4 @@
-from typing import Callable, Any
+from typing import Callable, Any, Optional
 
 import customtkinter as ctk
 
@@ -6,7 +6,12 @@ CANCEL_STR = "cancel"
 
 
 class StepInterface(ctk.CTkFrame):
-    def __init__(self, master: ctk.CTk, title: str, result_handler_func: Callable[[str], Any]):
+    def __init__(self, master: ctk.CTk,
+                 title: str,
+                 result_handler_func: Callable[[str], Any],
+                 cancel_btn_text: Optional[str] = "Cancel",
+                 next_btn_text: Optional[str] = "Next"
+        ):
         super(StepInterface, self).__init__(master)
         self.master: ctk.CTk = master
         self._result_handler_func = result_handler_func
@@ -31,24 +36,32 @@ class StepInterface(ctk.CTkFrame):
         self.button_frame = ctk.CTkFrame(self)
         self.button_frame.grid(row=2, column=0, pady=5, padx=5, sticky='ew')
 
-        self.next_button = ctk.CTkButton(self.button_frame, text="Next", command=self._on_next, width=0)
-        self.next_button.pack(side=ctk.RIGHT, padx=5)
+        if cancel_btn_text:
+            self.cancel_button = ctk.CTkButton(self.button_frame, text=cancel_btn_text,
+                                               command=self._on_cancel_button_press, width=0)
+            self.cancel_button.pack(side=ctk.LEFT, padx=5)
 
-        self.cancel_button = ctk.CTkButton(self.button_frame, text="Cancel", command=self._on_cancel, width=0)
-        self.cancel_button.pack(side=ctk.LEFT, padx=5)
+        if next_btn_text:
+            self.next_button = ctk.CTkButton(self.button_frame, text=next_btn_text, command=self._on_next_button_press,
+                                             width=0)
+            self.next_button.pack(side=ctk.RIGHT, padx=5)
 
         self.error_label = ctk.CTkLabel(self.button_frame, text="", text_color="red")
         self.error_label.pack(side=ctk.LEFT, fill=ctk.BOTH, expand=True)
 
-    def _on_next(self):
+    def _on_next_button_press(self):
         if not self._active:
             return
+        self.next_button.configure(state=ctk.DISABLED)
         self.on_next()
+        self.next_button.configure(state=ctk.NORMAL)
 
-    def _on_cancel(self):
+    def _on_cancel_button_press(self):
         if not self._active:
             return
+        self.cancel_button.configure(state=ctk.DISABLED)
         self.on_cancel()
+        self.cancel_button.configure(state=ctk.NORMAL)
 
     def on_next(self):
         if not self._active:
@@ -104,8 +117,8 @@ class OptionFrame(StepInterface):
 
 
 class InputFrame(StepInterface):
-    def __init__(self, master: ctk.CTk, title: str, result_handler_func: Callable[[str], Any],
-                 description="Input:", default=""):
+    def __init__(self, master: ctk.CTk, title: str, result_handler_func: Callable[[str], Any], description="Input:",
+                 default=""):
         super().__init__(master, title, result_handler_func)
         self.description_label = ctk.CTkLabel(self.content_frame, text=description, justify=ctk.LEFT, height=32)
         self.description_label.pack(side=ctk.TOP, anchor=ctk.NW, pady=5, padx=5, fill=ctk.BOTH, expand=True)
@@ -123,14 +136,14 @@ class MonitoredEntry(ctk.CTkEntry):
         super(MonitoredEntry, self).__init__(master, *args, **kwargs)
         self.string_var = ctk.StringVar()
         self._on_write = lambda s: s
-        self.string_var.trace_add("write", lambda _1, _2, _3: self._on_write(self.get()))
+        self.string_var.trace_add("write", lambda _a, _b, _c: self._on_write(self.get()))
 
     def hook_on_write(self, func: Callable[[str], Any]):
         self._on_write = func
+
 
 class CtkEntryLabel(ctk.CTkEntry):
     def __init__(self, master, *args, text="", **kwargs):
         super().__init__(master, border_width=0, fg_color="transparent", *args, **kwargs)
         self.insert(0, text)
         self.configure(state="readonly")
-

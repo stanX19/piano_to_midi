@@ -3,7 +3,8 @@ import time
 from typing import Callable, Any, Union
 import customtkinter as ctk
 import tkinter as tk
-from ui_classes import StepInterface, CANCEL_STR, HomeFrame, QueueManager, ConfirmationFrame
+from ui_classes import StepInterface, CANCEL_STR, QueueManager
+from main_frames import HomeFrame, ConfirmationFrame, ProcessingFrame
 
 
 class ScalableApp(ctk.CTk):
@@ -45,6 +46,7 @@ class App(ScalableApp):
         self._frames: list[StepInterface] = [
             HomeFrame(self, self.choose_frame, self.queue_manager),
             ConfirmationFrame(self, self.choose_frame, self.queue_manager),
+            ProcessingFrame(self, self.choose_frame, self.queue_manager),
         ]
         self._idx: int = 0
         self.current_frame = self._frames[0]

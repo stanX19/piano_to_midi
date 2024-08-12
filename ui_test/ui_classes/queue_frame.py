@@ -71,7 +71,7 @@ class QueueItemEditFrame(QueueItemBaseFrame):
         self.container_frame.grid_columnconfigure(3, weight=0, minsize=80)  # checkbox
         self.container_frame.grid_rowconfigure(0, weight=1)
         self.container_frame.grid_rowconfigure(1, weight=1)
-        self.container_frame.grid_rowconfigure(2, weight=1)
+        # self.container_frame.grid_rowconfigure(2, weight=1)
 
         # Index frame and label
         self.index_frame = ctk.CTkFrame(self.container_frame, width=100, height=100)
@@ -79,12 +79,12 @@ class QueueItemEditFrame(QueueItemBaseFrame):
 
         # Source path label and entry (readonly)
         self.src_label = CtkEntryLabel(self.container_frame, text="Source Path:", width=100)
-        self.src_path_label = CtkEntryLabel(self.container_frame, text=data.src_path, width=100000)
+        self.save_as_label = CtkEntryLabel(self.container_frame, text="Save As:", width=100)
+        self.src_path_label = CtkEntryLabel(self.container_frame, text=data.src_path, width=0)
 
         # Save as label and entry (editable)
-        self.save_as_label = CtkEntryLabel(self.container_frame, text="Save As:", width=100)
-        self.save_as_entry = ctk.CTkEntry(self.container_frame, textvariable=data.title_var, width=100000,
-                                          state="normal")
+        self.save_as_entry = ctk.CTkEntry(self.container_frame, textvariable=data.title_var,
+                                          state="normal", width=0)
 
         # Checkbox
         self.remove_button = ctk.CTkButton(self.container_frame, text="Unselect", width=0, command=self._on_unselect)

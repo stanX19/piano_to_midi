@@ -3,9 +3,9 @@ from typing import Callable, Any, Union
 
 import customtkinter as ctk
 
-from .templates import StepInterface, CANCEL_STR
-from .queue_manager import QueueManager
-from .queue_frame import QueueContainerFrame
+from ui_test.ui_classes import StepInterface, CANCEL_STR
+from ui_test.ui_classes import QueueManager
+from ui_test.ui_classes import QueueContainerFrame
 
 
 class PathEntryFrame(ctk.CTkFrame):
@@ -88,7 +88,7 @@ class HomeFrame(StepInterface):
     """
 
     def __init__(self, master: ctk.CTk, result_handler_func: Callable[[str], Any], queue_manager: QueueManager):
-        super().__init__(master, "Home", result_handler_func)
+        super().__init__(master, "Home", result_handler_func, cancel_btn_text=None)
         self.queue_manager = queue_manager
 
         self.content_frame.grid_rowconfigure(0, weight=0)
