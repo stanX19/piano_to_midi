@@ -1,9 +1,9 @@
 import cv2
 import numpy as np
 from threading import Thread
-from p2m_types import *
-from video_class import VideoClass
-import constants
+from p2m.p2m_types import *
+from algo.classes import VideoClass
+from p2m import p2m_constants
 
 
 def get_average_color(image: ImageType, cords: list[CordType]) -> np.ndarray:
@@ -22,7 +22,7 @@ def draw_keys(img: ImageType, difference: np.ndarray, keys: list[RectType]):
     WIDTH2 = 3
     COLOR1 = (0, 255, 0)  # Green
     COLOR2 = (0, 0, 255)  # Red
-    is_pressed = difference > constants.ON_THRESHOLD
+    is_pressed = difference > p2m_constants.ON_THRESHOLD
 
     for idx, key in enumerate(keys):
         x, y, w, h = key

@@ -1,12 +1,9 @@
-import math
-import statistics
-import numpy as np
-from p2m_types import *
-from process_rects import remove_duplicate_rectangles
-from typing import Optional, Union
-import utils
 import cv2
-from validate_keys import validate_keys
+
+from algo import utils
+from algo.process_rects import remove_duplicate_rectangles
+from algo.validate_keys import validate_keys
+from p2m.p2m_types import *
 
 
 def preprocess_image(img: ImageType) -> ImageType:
@@ -49,7 +46,8 @@ def display(y_classified, yh_classified):
 
 def classify_keys(keys: list[RectType]) -> KeysPairType:
     y_classified: list[list[RectType]] = utils.group_data(keys, key=lambda k: k[1], tolerance=15)
-    yh_classified: list[list[list[RectType]]] = [utils.group_data(row, key=lambda k: k[3], tolerance=10) for row in y_classified]
+    yh_classified: list[list[list[RectType]]] = [utils.group_data(row, key=lambda k: k[3], tolerance=10) for row in
+                                                 y_classified]
     # display(y_classified, yh_classified)
     ret = None
     entropy = 1.0  # from 0.0 to 1.0, lower the better

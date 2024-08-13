@@ -2,7 +2,8 @@ from typing import Callable, Any, Union
 import customtkinter as ctk
 from threading import Thread
 from .queue_manager import QueueData, QueueManager
-from .templates import *
+from .templates import CtkEntryLabel
+from .video_frame import CtkVideoFrame
 
 
 class QueueItemBaseFrame(ctk.CTkFrame):
@@ -28,7 +29,6 @@ class QueueItemBaseFrame(ctk.CTkFrame):
 
     def _refresh_idx(self):
         pass
-
 
 
 class QueueItemFrame(QueueItemBaseFrame):
@@ -123,21 +123,19 @@ class QueueItemProcessFrame(QueueItemBaseFrame):
         self.container_frame.grid_rowconfigure(2, weight=0)     # line 1
         self.container_frame.grid_rowconfigure(3, weight=0)     # line 2
 
-        self.video_container_frame = ctk.CTkFrame(self.container_frame)
-        self.video_frame = ctk.CTkFrame(self.video_container_frame, width=640, height=360)
-        self.video_frame.pack(padx=5, pady=5)
-
         self.progress_bar = ctk.CTkProgressBar(self.container_frame)
+        self.video_frame = CtkVideoFrame(self.container_frame, data.video, height=720, width=1280,
+                                         progress_bar=self.progress_bar)
 
         self.status_text_label = ctk.CTkLabel(self.container_frame, text="Status", anchor=ctk.E)
         self.save_as_text_label = ctk.CTkLabel(self.container_frame, text="Saving as", anchor=ctk.E)
         self.status_label = ctk.CTkLabel(self.container_frame, text="Processing...", anchor=ctk.W)
         self.save_as_label = ctk.CTkLabel(self.container_frame, text=data.title_var.get() + ".mid", anchor=ctk.W)
 
-        self.pause_btn = ctk.CTkButton(self.container_frame, text="Pause", command=self.on_pause)
+        self.pause_btn = ctk.CTkButton(self.container_frame, text="Start", command=self.on_resume)
         self.change_btn = ctk.CTkButton(self.container_frame, text="Change", command=self.on_change)
 
-        self.video_container_frame.grid(row=0, column=0, columnspan=3, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
+        self.video_frame.grid(row=0, column=0, columnspan=3, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
         self.progress_bar.grid(row=1, column=0, columnspan=3, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
         self.status_text_label.grid(row=2, column=0, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
         self.save_as_text_label.grid(row=3, column=0, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
@@ -151,9 +149,8 @@ class QueueItemProcessFrame(QueueItemBaseFrame):
         self.pause_btn.configure(text="Resume", command=self.on_resume)
 
     def on_resume(self):
-        print("Resume")
+        self.video_frame.play()
         self.pause_btn.configure(text="Pause", command=self.on_pause)
-
 
     def on_change(self):
         print("change? no change")

@@ -1,9 +1,7 @@
-import process_rects
-import utils
-from p2m_types import *
+from p2m.p2m_types import *
 
 
-def rect_contains(rect: RectType, cord: CordType, x_margin = 5, y_margin = 9) -> bool:
+def rect_contains(rect: RectType, cord: CordType, x_margin=5, y_margin=9) -> bool:
     x, y, width, height = rect
     cord_x, cord_y = cord
     return x - x_margin <= cord_x <= x + width + x_margin and y - y_margin <= cord_y <= y + height + y_margin

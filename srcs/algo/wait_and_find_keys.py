@@ -1,7 +1,7 @@
 import cv2
-from p2m_types import *
-from video_class import VideoClass
-from locate_black_and_white import locate_white_and_black, preprocess_image, classify_keys, detect_rects
+from p2m.p2m_types import *
+from algo.classes import VideoClass
+from algo.locate_black_and_white import locate_white_and_black, preprocess_image, classify_keys, detect_rects
 
 
 def wait_and_find_keys(video: VideoClass) -> KeysPairType:

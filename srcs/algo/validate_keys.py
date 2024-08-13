@@ -1,9 +1,9 @@
 import math
 import statistics
 import numpy as np
-from p2m_types import RectType
+from p2m.p2m_types import RectType
 from typing import Optional, Union
-import utils
+from algo import utils
 
 
 def is_outlier(data: list[int]) -> list[bool]:
@@ -123,7 +123,8 @@ def black_is_correct(white_keys: list[RectType], black_keys: list[RectType]) -> 
     return True
 
 
-def validate_keys(white_keys: list[RectType], black_keys: list[RectType]) -> Union[None, tuple[list[RectType], list[RectType]]]:
+def validate_keys(white_keys: list[RectType], black_keys: list[RectType])\
+        -> Union[None, tuple[list[RectType], list[RectType]]]:
     if not white_keys or not black_keys:
         return None
     white_keys.sort(key=lambda k: k[0])

@@ -2,14 +2,14 @@ import os
 import easygui
 import json
 import pathlib
-import p2m_path
-from p2m_types import *
-from process_video import get_dpf
-from video_class import VideoClass
-from wait_and_find_keys import wait_and_find_keys
-from get_watch_cords import get_watch_cords_dict
-from p2m_exception import *
-import constants
+from p2m import p2m_path
+from p2m.p2m_types import *
+from algo.process_video import get_dpf
+from algo.classes import VideoClass
+from algo.wait_and_find_keys import wait_and_find_keys
+from algo.get_watch_cords import get_watch_cords_dict
+from p2m.p2m_exception import *
+from p2m import p2m_constants
 import mido
 
 
@@ -91,9 +91,9 @@ def save_dpf_data_as_midi(name: str, source_video_fps: int, difference_per_frame
         for key_idx, brightness_diff in enumerate(frame_diff):
             note = 24 + key_idx  # Low C (24) as the base note
 
-            if brightness_diff > constants.ON_THRESHOLD:
+            if brightness_diff > p2m_constants.ON_THRESHOLD:
                 add_note_on(note)
-            elif brightness_diff < -constants.OFF_THRESHOLD:
+            elif brightness_diff < -p2m_constants.OFF_THRESHOLD:
                 add_note_off(note)
 
     for msg in track:
@@ -115,7 +115,7 @@ def _convert_one(video_path: str, name: str, use_history: bool, directory: str):
     save_dpf_data_as_midi(name, fps, dpf, directory)
 
 
-def prompt_for_details(path: str) -> list[str, str, bool]:
+def prompt_for_details(path: str) -> tuple[str, str, bool]:
     # Define the filepath for the existing processing record
     dpf_filepath = generate_p2m_dpf_filepath(path)
 
@@ -143,19 +143,19 @@ Skip video processing?"""
     if name is None:
         raise OperationCancelledException()
     name = name.strip()
-    return [path, name, use_history]
+    return path, name, use_history
 
 
 def save_video_as_midi(dst_path: str, video_paths: Union[list[str], None] = None):
     if video_paths is None:
         video_paths = easygui.fileopenbox("select designated 720p mp4 file", "Select Video",
-                                         "D:\\Downloads\\", filetypes=["*.mp4"], multiple=True)
+                                          "D:\\Downloads\\", filetypes=["*.mp4"], multiple=True)
     if video_paths is None:
         return
     if any(not p.endswith(".mp4") for p in video_paths):
         easygui.msgbox("Selected file must be in mp4 format", "Error")
         return
-    queue: list[list[str, str, bool]] = []
+    queue: list[tuple[str, str, bool]] = []
 
     for path in video_paths:
         try:

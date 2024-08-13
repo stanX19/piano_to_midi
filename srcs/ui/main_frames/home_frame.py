@@ -3,9 +3,9 @@ from typing import Callable, Any, Union
 
 import customtkinter as ctk
 
-from ui_test.ui_classes import StepInterface
-from ui_test.ui_classes import QueueManager
-from ui_test.ui_classes import QueueContainerFrame
+from ui.classes import StepInterface
+from ui.classes import QueueManager
+from ui.classes import QueueContainerFrame
 
 
 class PathEntryFrame(ctk.CTkFrame):
@@ -76,17 +76,6 @@ class PathEntryFrame(ctk.CTkFrame):
 
 
 class HomeFrame(StepInterface):
-    """
-    Behaviour1:
-    - one local video file, no pop up
-
-    Behaviour2:
-    - multiple local videos, pop up below
-
-    Behaviour3:
-    - Youtube video url, pop up below
-    """
-
     def __init__(self, master: ctk.CTk, result_handler_func: Callable[[str], Any], queue_manager: QueueManager):
         super().__init__(master, "Home", result_handler_func, cancel_btn_text=None)
         self.queue_manager = queue_manager

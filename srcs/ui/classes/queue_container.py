@@ -59,6 +59,7 @@ class QueueContainerFrame(ctk.CTkScrollableFrame):
     def get_new_item_frame(self, data) -> QueueItemBaseFrame:
         return QueueItemFrame(self, data, len(self.queue_frame_list) + 1)
 
+
 class QueueEditContainerFrame(QueueContainerFrame):
     def __init__(self, master, queue_manager: QueueManager, *args, **kwargs):
         super().__init__(master, queue_manager, *args, **kwargs)
@@ -69,6 +70,7 @@ class QueueEditContainerFrame(QueueContainerFrame):
     def get_new_item_frame(self, data):
         return QueueItemEditFrame(self, data, len(self.queue_frame_list) + 1,
                                   unselect_callback_func=self.refresh)
+
 
 class QueueProcessContainerFrame(QueueContainerFrame):
     def __init__(self, master, queue_manager: QueueManager, *args, **kwargs):

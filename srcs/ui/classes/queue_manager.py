@@ -1,6 +1,7 @@
 import pathlib
-from typing import Callable, Any, Union
+
 import customtkinter as ctk
+from algo.classes import VideoClass
 
 
 class QueueData:
@@ -11,6 +12,7 @@ class QueueData:
     def __init__(self, _str: str):
         _str = str(_str)
         self.src_path: str = _str
+        self.video: VideoClass = VideoClass(_str)
         self.src_path_var = ctk.StringVar(value=self.src_path)
         self.is_selected_var: ctk.BooleanVar = ctk.BooleanVar(value=True)
         self.title_var: ctk.StringVar = ctk.StringVar(value=self.get_default_title())
@@ -18,7 +20,8 @@ class QueueData:
         self.status = QueueData.WAITING
 
     def __str__(self):
-        return f"QueueData: [title='{self.title_var.get()}', selected={self.is_selected_var.get()}, status={self.status}]"
+        return f"QueueData: [title='{self.title_var.get()}',\
+selected={self.is_selected_var.get()}, status={self.status}]"
 
     def __repr__(self):
         return self.__str__()
@@ -49,11 +52,11 @@ class QueueManager:
 
     @property
     def path_list(self) -> list[str]:
-        return[q.src_path for q in self._queue_list]
+        return [q.src_path for q in self._queue_list]
 
     @property
     def selected_list(self) -> list[QueueData]:
-        return[q for q in self._queue_list if q.is_selected()]
+        return [q for q in self._queue_list if q.is_selected()]
 
     def add_path(self, path: str) -> None:
         if path in self.path_list:

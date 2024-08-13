@@ -10,8 +10,7 @@ class StepInterface(ctk.CTkFrame):
                  title: str,
                  result_handler_func: Callable[[str], Any],
                  cancel_btn_text: Optional[str] = "Cancel",
-                 next_btn_text: Optional[str] = "Next"
-        ):
+                 next_btn_text: Optional[str] = "Next"):
         super(StepInterface, self).__init__(master)
         self.master: ctk.CTk = master
         self._result_handler_func = result_handler_func

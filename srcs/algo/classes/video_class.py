@@ -2,7 +2,7 @@ import cv2
 import time
 import numpy as np
 import pathlib
-import utils
+from algo import utils
 
 
 class VideoClass:

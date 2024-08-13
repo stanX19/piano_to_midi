@@ -3,8 +3,8 @@ import time
 from typing import Callable, Any, Union
 import customtkinter as ctk
 import tkinter as tk
-from ui_test.ui_classes import StepInterface, CANCEL_STR, QueueManager
-from ui_test.main_frames import HomeFrame, ConfirmationFrame, ProcessingFrame
+from ui.classes import StepInterface, CANCEL_STR, QueueManager
+from ui.main_frames import HomeFrame, ConfirmationFrame, ProcessingFrame
 
 
 class ScalableApp(ctk.CTk):
@@ -39,7 +39,7 @@ class ScalableApp(ctk.CTk):
 
 
 class App(ScalableApp):
-    def __init__(self, width=400, height=240):
+    def __init__(self, width=1280, height=720):
         super().__init__()
         self.geometry(f"{width}x{height}")
         self.title('Piano to midi')
@@ -80,11 +80,11 @@ class App(ScalableApp):
 
 
 def main():
-    app = App(width=1280, height=720)
+    app = App()
     app.mainloop()
 
 
 if __name__ == "__main__":
     # ctk.set_appearance_mode("dark")  # Modes: system (default), light, dark
-    ctk.set_default_color_theme("blue")  # Themes: blue (default), dark-blue, green
+    # ctk.set_default_color_theme("blue")  # Themes: blue (default), dark-blue, green
     main()
