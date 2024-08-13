@@ -10,10 +10,14 @@ from ui_test.main_frames import HomeFrame, ConfirmationFrame, ProcessingFrame
 class ScalableApp(ctk.CTk):
     def __init__(self):
         super().__init__()
+        self.overrideredirect(True)
+        self.withdraw()
         self._scaling_in_queue = False
         self._current_scaling = ctk.ScalingTracker.get_widget_scaling(self)
         self.bind("<Control-MouseWheel>", self.resize)
         self.apply_scaling()
+        self.after(1000, self.deiconify)
+        self.after(1000, self.overrideredirect, False)
 
     def resize(self, arg: tk.Event):
         FACTOR = 1.1
