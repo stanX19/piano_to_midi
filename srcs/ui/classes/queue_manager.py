@@ -1,8 +1,10 @@
 import pathlib
+import os
 
 import customtkinter as ctk
+from p2m import p2m_path
 from algo.video_class import VideoClass
-from algo.process_class import ProcessingClass
+from algo.process_class import PianoMp4ToMidi
 
 
 class QueueData:
@@ -13,7 +15,7 @@ class QueueData:
     def __init__(self, _str: str):
         _str = str(_str)
         self.src_path: str = _str
-        self.processor: ProcessingClass = ProcessingClass(self.src_path, "idk man")
+        self.processor: PianoMp4ToMidi = PianoMp4ToMidi(self.src_path)
         self.src_path_var = ctk.StringVar(value=self.src_path)
         self.is_selected_var: ctk.BooleanVar = ctk.BooleanVar(value=True)
         self.title_var: ctk.StringVar = ctk.StringVar(value=self.get_default_title())
@@ -26,6 +28,9 @@ selected={self.is_selected_var.get()}, status={self.status}]"
 
     def __repr__(self):
         return self.__str__()
+
+    def get_save_path(self):
+        return pathlib.Path(os.path.join(p2m_path.data, self.title_var.get())).with_suffix(".mid")
 
     def reset_title(self):
         self.title_var.set(self.get_default_title())

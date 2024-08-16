@@ -3,19 +3,19 @@ import cv2
 from typing import Optional
 from PIL import Image, ImageTk
 
-from algo.process_class import ProcessingClass
+from algo.process_class import PianoMp4ToMidi
 from algo.utils import cv2_resize_to_fit
 
 
 class CtkProcessDisplayFrame(ctk.CTkFrame):
-    def __init__(self, master, processor: ProcessingClass, width: int = 1280, height: int = 720,
+    def __init__(self, master, processor: PianoMp4ToMidi, width: int = 1280, height: int = 720,
                  progress_bar: Optional[ctk.CTkProgressBar] = None, **kwargs):
         super().__init__(master, **kwargs)
-        self.processor: ProcessingClass = processor
+        self.processor: PianoMp4ToMidi = processor
         self.progress_bar: Optional[ctk.CTkProgressBar] = progress_bar
         self.width: int = width
         self.height: int = height
-        self.canvas: ctk.CTkCanvas = ctk.CTkCanvas(self, width=self.width, height=self.height)
+        self.canvas: ctk.CTkCanvas = ctk.CTkCanvas(self)
         self.canvas.pack(fill=ctk.BOTH, expand=True)
 
         # Placeholder for the image on the canvas
@@ -54,12 +54,15 @@ class CtkProcessDisplayFrame(ctk.CTkFrame):
             return
         self.progress_bar.set(self.processor.get_progress())
 
+    def expand_canvas(self):
+        self.canvas.configure(width=self.width, height=self.height)
+
     def play(self):
         """Start displaying the video frames."""
         self.update_frame()
         self.update_progress_bar()
         if not self.processor.is_completed():
-            self._play_schedule = self.after(30, self.play)
+            self._play_schedule = self.after(100, self.play)
         else:
             self._play_schedule = None
 

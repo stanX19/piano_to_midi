@@ -146,3 +146,9 @@ class CtkEntryLabel(ctk.CTkEntry):
         super().__init__(master, border_width=0, fg_color="transparent", *args, **kwargs)
         self.insert(0, text)
         self.configure(state="readonly")
+
+
+class CtkWrappingLabel(ctk.CTkLabel):
+    def __init__(self, master=None, **kwargs):
+        super().__init__(master, **kwargs)
+        self.bind('<Configure>', lambda e: self.configure(wraplength=self.winfo_width() - 300))

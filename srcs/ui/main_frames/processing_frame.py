@@ -10,7 +10,7 @@ from ui.classes import QueueProcessContainerFrame
 
 class ProcessingFrame(StepInterface):
     def __init__(self, master: ctk.CTk, result_handler_func: Callable[[str], Any], queue_manager: QueueManager):
-        super().__init__(master, "Processing", result_handler_func)
+        super().__init__(master, "Processing", result_handler_func, next_btn_text="")
         self.queue_manager = queue_manager
 
         self.content_frame.grid_rowconfigure(0, weight=1)
