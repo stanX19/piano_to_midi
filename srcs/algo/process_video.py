@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 from threading import Thread
 from p2m.p2m_types import *
-from algo.classes import VideoClass
+from algo.video_class import VideoClass
 from p2m import p2m_constants
 
 
@@ -68,9 +68,9 @@ def interquartile_rgb_mean(values: np.ndarray) -> np.ndarray:
 
 
 def process_video_func(video: VideoClass, watch_cords: dict[RectType, list[CordType]],
-                       keys: KeysPairType, difference_per_frame: list[np.ndarray]):
+                       black_keys: list[RectType], difference_per_frame: list[np.ndarray]):
     watch_cords_values = list(watch_cords.values())
-    cord_type = np.array([1 if cord in keys[1] else 0 for cord in watch_cords])
+    cord_type = np.array([1 if cord in black_keys else 0 for cord in watch_cords])
     original_colors = np.full((len(watch_cords), 3), 0)  # [[b, g, r], [b, g, r], ..., [b, g, r]]
     video.set_start_time()
 
@@ -96,13 +96,13 @@ def process_video_func(video: VideoClass, watch_cords: dict[RectType, list[CordT
         difference_per_frame.append(difference)
 
 
-def get_dpf(video: VideoClass, watch_cords: dict[RectType, list[CordType]], keys: KeysPairType,
-            quiet=False, show_video=True) -> list[list]:
+def get_dpf_in_thread(video: VideoClass, watch_cords: dict[RectType, list[CordType]], keys: KeysPairType,
+                      quiet=False, show_video=True) -> list[list]:
     difference_per_frame = [np.full(len(watch_cords), 0)]
     watch_cords_list = list(watch_cords)
     processing_thread = Thread(
         target=process_video_func,
-        args=(video, watch_cords, keys, difference_per_frame)
+        args=(video, watch_cords, keys[1], difference_per_frame)
     )
     processing_thread.start()
 

@@ -4,10 +4,11 @@ import json
 import pathlib
 from p2m import p2m_path
 from p2m.p2m_types import *
-from algo.process_video import get_dpf
-from algo.classes import VideoClass
+from algo.process_video import get_dpf_in_thread
+from algo.video_class import VideoClass
 from algo.wait_and_find_keys import wait_and_find_keys
 from algo.get_watch_cords import get_watch_cords_dict
+from algo.dpf_to_midi import dpf_data_to_midi
 from p2m.p2m_exception import *
 from p2m import p2m_constants
 import mido
@@ -39,7 +40,7 @@ def video_to_dpf_data(video_path: str) -> tuple[float, DpfType]:
     video = VideoClass(video_path)
     keys = wait_and_find_keys(video)
     watch_cords_dict = get_watch_cords_dict(*keys)
-    dpf = get_dpf(video, watch_cords_dict, keys, show_video=True)
+    dpf = get_dpf_in_thread(video, watch_cords_dict, keys, show_video=True)
     diff_per_frame_data = video.fps, dpf
     video.release()
 
@@ -53,54 +54,7 @@ def video_to_dpf_data(video_path: str) -> tuple[float, DpfType]:
 
 
 def save_dpf_data_as_midi(name: str, source_video_fps: int, difference_per_frame: list[list[int]], directory: str):
-    dpf = difference_per_frame
-    fps = source_video_fps
-    midi = mido.MidiFile()
-    track = mido.MidiTrack()
-    midi.tracks.append(track)
-
-    tempo = mido.bpm2tempo(240)
-    track.append(mido.MetaMessage('set_tempo', tempo=tempo))
-
-    note_on_velocity = 64
-    note_off_velocity = 0
-
-    time_per_frame = mido.second2tick(1/fps, ticks_per_beat=midi.ticks_per_beat, tempo=tempo)
-
-    note_on_record = {}
-    time_bucket = 0.0
-
-    def add_note_off(_note: int):
-        nonlocal time_bucket, note_on_record
-        if note_on_record.get(_note, 0) == 0:
-            return
-        track.append(mido.Message('note_off', note=_note, velocity=note_off_velocity, time=int(time_bucket)))
-        time_bucket -= int(time_bucket)
-        note_on_record[_note] = 0
-
-    def add_note_on(_note: int):
-        nonlocal time_bucket, note_on_record
-        if note_on_record.get(_note, 0) == 1:
-            add_note_off(_note)
-        track.append(mido.Message('note_on', note=_note, velocity=note_on_velocity, time=int(time_bucket)))
-        time_bucket -= int(time_bucket)
-        note_on_record[_note] = 1
-
-    for frame_idx, frame_diff in enumerate(dpf[:-1]):
-        time_bucket += time_per_frame
-        for key_idx, brightness_diff in enumerate(frame_diff):
-            note = 24 + key_idx  # Low C (24) as the base note
-
-            if brightness_diff > p2m_constants.ON_THRESHOLD:
-                add_note_on(note)
-            elif brightness_diff < -p2m_constants.OFF_THRESHOLD:
-                add_note_off(note)
-
-    for msg in track:
-        msg.time = 0
-        if msg.type == 'note_on':
-            break
-    # Save the MIDI file
+    midi = dpf_data_to_midi(source_video_fps, difference_per_frame)
     filepath = f"{directory}/{name}.mid"
     midi.save(filepath)
     print(f"saved as {filepath}")
@@ -169,11 +123,11 @@ def save_video_as_midi(dst_path: str, video_paths: Union[list[str], None] = None
 
     success = 0
     for args in queue:
-        try:
+        # try:
             _convert_one(*args, directory=dst_path)
             success += 1
-        except Exception as exc:
-            print("Error: ", exc)
+        # except Exception as exc:
+        #     print("Error: ", exc)
 
     if success:
         easygui.msgbox(f"Files have been saved to {dst_path}", "Processing Complete")
@@ -182,6 +136,6 @@ def save_video_as_midi(dst_path: str, video_paths: Union[list[str], None] = None
 
 
 if __name__ == '__main__':
-    save_video_as_midi(p2m_path.data, [r"..\assets\amygdala_piano.mp4"])
+    save_video_as_midi(p2m_path.data, [r"..\..\assets\amygdala_piano2.mp4"])
     # save_video_as_midi(p2m_path.data)
 

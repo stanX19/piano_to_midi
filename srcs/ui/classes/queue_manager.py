@@ -1,7 +1,8 @@
 import pathlib
 
 import customtkinter as ctk
-from algo.classes import VideoClass
+from algo.video_class import VideoClass
+from algo.process_class import ProcessingClass
 
 
 class QueueData:
@@ -12,7 +13,7 @@ class QueueData:
     def __init__(self, _str: str):
         _str = str(_str)
         self.src_path: str = _str
-        self.video: VideoClass = VideoClass(_str)
+        self.processor: ProcessingClass = ProcessingClass(self.src_path, "idk man")
         self.src_path_var = ctk.StringVar(value=self.src_path)
         self.is_selected_var: ctk.BooleanVar = ctk.BooleanVar(value=True)
         self.title_var: ctk.StringVar = ctk.StringVar(value=self.get_default_title())

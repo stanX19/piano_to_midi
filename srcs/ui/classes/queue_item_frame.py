@@ -4,6 +4,8 @@ from threading import Thread
 from .queue_manager import QueueData, QueueManager
 from .templates import CtkEntryLabel
 from .video_frame import CtkVideoFrame
+from .process_display_frame import CtkProcessDisplayFrame
+from .run_in_thread_handler import RunInThreadHandler
 
 
 class QueueItemBaseFrame(ctk.CTkFrame):
@@ -124,8 +126,8 @@ class QueueItemProcessFrame(QueueItemBaseFrame):
         self.container_frame.grid_rowconfigure(3, weight=0)     # line 2
 
         self.progress_bar = ctk.CTkProgressBar(self.container_frame)
-        self.video_frame = CtkVideoFrame(self.container_frame, data.video, height=720, width=1280,
-                                         progress_bar=self.progress_bar)
+        self.video_frame = CtkProcessDisplayFrame(self.container_frame, data.processor, height=720, width=1280,
+                                                  progress_bar=self.progress_bar)
 
         self.status_text_label = ctk.CTkLabel(self.container_frame, text="Status", anchor=ctk.E)
         self.save_as_text_label = ctk.CTkLabel(self.container_frame, text="Saving as", anchor=ctk.E)
@@ -150,6 +152,7 @@ class QueueItemProcessFrame(QueueItemBaseFrame):
 
     def on_resume(self):
         self.video_frame.play()
+        RunInThreadHandler(self, self.data.processor.generate_midi)
         self.pause_btn.configure(text="Pause", command=self.on_pause)
 
     def on_change(self):

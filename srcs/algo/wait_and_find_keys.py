@@ -1,6 +1,6 @@
 import cv2
 from p2m.p2m_types import *
-from algo.classes import VideoClass
+from algo.video_class import VideoClass
 from algo.locate_black_and_white import locate_white_and_black, preprocess_image, classify_keys, detect_rects
 
 
@@ -14,7 +14,7 @@ def wait_and_find_keys(video: VideoClass) -> KeysPairType:
     raise RuntimeError("piano to midi: Failed to locate keys")
 
 
-def draw_keys(img, white_keys, black_keys, all_keys):
+def draw_keys(img: ndarray, white_keys: list[RectType], black_keys: list[RectType], all_keys: list[RectType]):
     WIDTH = 2
     all_keys.sort(key=lambda k: k[0])
     for i, (x, y, w, h) in enumerate(all_keys):

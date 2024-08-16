@@ -41,6 +41,7 @@ class PathEntryFrame(ctk.CTkFrame):
     def change_mode(self):
         TO_MIDI = "MP4 to midi"
         DOWNLOAD = "URL to MP4"
+        self.mode_label.focus()
         if self.mode_label.cget('text') != TO_MIDI:
             self.mode_label.configure(text=TO_MIDI)
             self.entry.configure(placeholder_text="C:/Downloads/piano_synthesia_video.mp4")

@@ -3,25 +3,28 @@ import time
 import numpy as np
 import pathlib
 from algo import utils
+from typing import Optional
 
 
 class VideoClass:
     def __init__(self, video_path: str, max_size=(1280, 720)):
-        self.name = pathlib.Path(video_path).stem
-        self.cap = cv2.VideoCapture(video_path)
+        self.name: str = pathlib.Path(video_path).stem
+        self.cap: cv2.VideoCapture = cv2.VideoCapture(video_path)
+        if not self.cap.isOpened():
+            raise ValueError(f"Invalid video path: {video_path}")
         self.max_size = max_size
-        self.eof = False
-        self.fps = self.cap.get(cv2.CAP_PROP_FPS)
-        self.total_frames = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        self.current_frame_count = 0
-        self._current_frame = None
-        self._start_time = time.time()
-        self._start_frame_count = 0
+        self.eof: bool = False
+        self.fps: float = self.cap.get(cv2.CAP_PROP_FPS)
+        self.total_frames: int = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        self.current_frame_count: int = 0
+        self._current_frame: Optional[np.ndarray] = None
+        self._start_time: float = time.time()
+        self._start_frame_count: int = 0
 
     def read_next(self):
         """Read the next frame from the video."""
-        ret, frame = self.cap.read()
-        if ret:
+        success, frame = self.cap.read()
+        if success:
             self.current_frame_count += 1
             self._current_frame = utils.cv2_resize_to_fit(frame, *self.max_size)
             self.eof = False
@@ -46,6 +49,9 @@ class VideoClass:
         self.cap.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
         self.current_frame_count = frame_number
         self.read_next()
+
+    def reset(self):
+        self.skip_to_frame(0)
 
     def get_time_remaining_str(self):
         estimated_time_remaining = self.get_estimated_time_remaining()
@@ -99,6 +105,14 @@ class VideoClass:
 
         estimated_remaining_time = (elapsed_time / processed_frames) * remaining_frames
         return estimated_remaining_time
+
+    def get_progress(self):
+        processed_frames = self.current_frame_count - self._start_frame_count
+        total_frames = self.total_frames - self._start_frame_count
+
+        return processed_frames / total_frames
+
+
 
     def release(self):
         """Release the video capture object."""

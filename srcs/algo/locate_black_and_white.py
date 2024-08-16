@@ -68,9 +68,14 @@ def classify_keys(keys: list[RectType]) -> KeysPairType:
     return ret
 
 
-def locate_white_and_black(image: ImageType) -> KeysPairType:
+def locate_keys_like(image: ImageType) -> list[RectType]:
     image = preprocess_image(image)
-    keys = detect_rects(image)
-    keys = [k for k in keys if k[2] * 1.5 < k[3]]
+    rects = detect_rects(image)
+    keys_like = [k for k in rects if k[2] * 1.5 < k[3]]
+    return keys_like
+
+
+def locate_white_and_black(image: ImageType) -> KeysPairType:
+    keys = locate_keys_like(image)
     ret = classify_keys(keys)
     return ret

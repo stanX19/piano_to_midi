@@ -4,3 +4,8 @@ class OperationCancelledException(RuntimeError):
 
 class InvalidChoiceException(RuntimeError):
     pass
+
+
+class KeysNotFoundError(RuntimeError):
+    pass
+
