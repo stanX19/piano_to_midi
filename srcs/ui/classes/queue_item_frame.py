@@ -136,10 +136,10 @@ class QueueItemProcessFrame(QueueItemBaseFrame):
         self.progress_bar.grid(row=1, sticky="nsew")
         self.video_frame.grid(row=0, sticky="sew")
 
-        self.status_label = CtkWrappingLabel(self.container_frame, text="Status", anchor=ctk.W)
-        self.save_as_label = CtkWrappingLabel(self.container_frame, text="Saving as", anchor=ctk.W)
-        self.status_text_label = CtkWrappingLabel(self.container_frame, text="Not Started", anchor=ctk.W)
-        self.save_as_text_label = CtkWrappingLabel(self.container_frame, text=data.get_save_path(), anchor=ctk.W)
+        self.status_label = CtkWrappingLabel(self.container_frame, text="Status", anchor=ctk.SW)
+        self.save_as_label = CtkWrappingLabel(self.container_frame, text="Saving as", anchor=ctk.SW)
+        self.status_text_label = CtkWrappingLabel(self.container_frame, text="Not Started", anchor=ctk.NW)
+        self.save_as_text_label = CtkWrappingLabel(self.container_frame, text=data.get_save_path(), anchor=ctk.NW)
 
         self.pause_btn = ctk.CTkButton(self.container_frame, text="Start", command=self.on_resume)
         self.change_btn = ctk.CTkButton(self.container_frame, text="Change", command=self.on_change)
@@ -154,10 +154,10 @@ class QueueItemProcessFrame(QueueItemBaseFrame):
         # self.change_btn.grid(row=3, column=2, padx=5, pady=(5, 5), ipadx=5, sticky="nsew")
         self.video_container_frame.grid(row=0, column=0, rowspan=5, padx=5, pady=(5, 5), ipadx=5, sticky="nsew")
         self.status_label.grid(row=0, column=1, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
-        self.status_text_label.grid(row=1, column=1, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
+        self.status_text_label.grid(row=1, column=1, padx=(5, 5), pady=(5, 0), ipadx=5, sticky="nsew")
         self.save_as_label.grid(row=2, column=1, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
-        self.save_as_text_label.grid(row=3, column=1, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
-        self.pause_btn.grid(row=4, column=1, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
+        self.save_as_text_label.grid(row=3, column=1, padx=(5, 5), pady=(5, 0), ipadx=5, sticky="nsew")
+        self.pause_btn.grid(row=4, column=1, padx=5, pady=(5, 0), ipadx=5, sticky="ew")
 
     def on_pause(self):
         print("pause!")
@@ -183,3 +183,9 @@ class QueueItemProcessFrame(QueueItemBaseFrame):
 
     def update_progress_bar(self):
         pass
+
+    def show(self):
+        super().show()
+        self.update_idletasks()
+        self.video_frame.update_frame()
+        self.video_frame.update_progress_bar()

@@ -17,7 +17,7 @@ class ScalableApp(ctk.CTk):
         self.bind("<Control-MouseWheel>", self.resize)
         self.apply_scaling()
         self.after(1000, self.deiconify)
-        self.after(1000, self.overrideredirect, False)
+        self.after(1001, self.overrideredirect, False)
 
     def resize(self, arg: tk.Event):
         FACTOR = 1.1

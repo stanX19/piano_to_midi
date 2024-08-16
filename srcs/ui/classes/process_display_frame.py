@@ -3,15 +3,15 @@ import cv2
 from typing import Optional
 from PIL import Image, ImageTk
 
-from algo.process_class import PianoMp4ToMidi
+from algo.process_class import ProcessingClass
 from algo.utils import cv2_resize_to_fit
 
 
 class CtkProcessDisplayFrame(ctk.CTkFrame):
-    def __init__(self, master, processor: PianoMp4ToMidi, width: int = 1280, height: int = 720,
+    def __init__(self, master, processor: ProcessingClass, width: int = 1280, height: int = 720,
                  progress_bar: Optional[ctk.CTkProgressBar] = None, **kwargs):
         super().__init__(master, **kwargs)
-        self.processor: PianoMp4ToMidi = processor
+        self.processor: ProcessingClass = processor
         self.progress_bar: Optional[ctk.CTkProgressBar] = progress_bar
         self.width: int = width
         self.height: int = height
@@ -30,12 +30,12 @@ class CtkProcessDisplayFrame(ctk.CTkFrame):
         array_img = self.processor.get_displayed_frame()
         if array_img is None:
             return
-
         self.width = self.canvas.winfo_width()
         self.height = self.canvas.winfo_height()
         try:
             frame = cv2_resize_to_fit(array_img, self.width, self.height)
-        except cv2.error:
+        except cv2.error as exc:
+            print(self.width, self.height)
             return
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         img = Image.fromarray(frame)

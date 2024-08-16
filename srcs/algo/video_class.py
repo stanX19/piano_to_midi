@@ -8,6 +8,7 @@ from typing import Optional
 
 class VideoClass:
     def __init__(self, video_path: str, max_size=(1280, 720)):
+        self.video_path = video_path
         self.name: str = pathlib.Path(video_path).stem
         self.cap: cv2.VideoCapture = cv2.VideoCapture(video_path)
         if not self.cap.isOpened():
@@ -112,12 +113,15 @@ class VideoClass:
 
         return processed_frames / total_frames
 
-
-
     def release(self):
         """Release the video capture object."""
         self.cap.release()
         cv2.destroyAllWindows()
+
+    def get_thumbnail(self, thumbnail_progress_ratio: float = 0.1) -> np.ndarray:
+        copy = VideoClass(self.video_path)
+        copy.skip_to_frame(int(self.total_frames * thumbnail_progress_ratio))
+        return copy.current_frame
 
 # Example usage:
 # video = VideoClass("path_to_video.mp4")

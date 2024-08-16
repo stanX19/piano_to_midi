@@ -69,14 +69,14 @@ def state_cached_property(start_state: Optional[str] = None, error_state: str = 
     return combined_decorator
 
 
-class PianoMp4ToMidi:
+class ProcessingClass:
     def __init__(self, path: str):
         self.video_path: str = path
         self._state = ProcessStates.NOT_STARTED
 
         # self.save_as_path: str = save_as_path
         # self.fps: Optional[float] = None
-        # self.video: Optional[VideoClass] = None
+        self.video: VideoClass = VideoClass(self.video_path)
         self._unconfirmed_keys: list[RectType] = []
         self._white_keys: list[RectType] = []
         self._black_keys: list[RectType] = []
@@ -170,7 +170,7 @@ class PianoMp4ToMidi:
             return None
         img = self.video.current_frame
         if img is None:
-            return None
+            return self.video.get_thumbnail()
         img = img.copy()
         if self.watch_cords_list and self._dpf_raw:
             return draw_keys_with_dpf(img, self._dpf_raw[-1], self.watch_cords_list)
@@ -194,7 +194,7 @@ def test():
     video_path = r"C:\Users\DELL\PycharmProjects\pythonProject\piano_to_midi_312\assets\amygdala_piano.mp4"
     save_path = "../../../data/test.mid"
 
-    p = PianoMp4ToMidi(video_path)
+    p = ProcessingClass(video_path)
 
     print("starting thread")
     t = Thread(target=p.save_dpf_data)

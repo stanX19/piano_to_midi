@@ -4,7 +4,7 @@ import os
 import customtkinter as ctk
 from p2m import p2m_path
 from algo.video_class import VideoClass
-from algo.process_class import PianoMp4ToMidi
+from algo.process_class import ProcessingClass
 
 
 class QueueData:
@@ -15,7 +15,7 @@ class QueueData:
     def __init__(self, _str: str):
         _str = str(_str)
         self.src_path: str = _str
-        self.processor: PianoMp4ToMidi = PianoMp4ToMidi(self.src_path)
+        self.processor: ProcessingClass = ProcessingClass(self.src_path)
         self.src_path_var = ctk.StringVar(value=self.src_path)
         self.is_selected_var: ctk.BooleanVar = ctk.BooleanVar(value=True)
         self.title_var: ctk.StringVar = ctk.StringVar(value=self.get_default_title())
