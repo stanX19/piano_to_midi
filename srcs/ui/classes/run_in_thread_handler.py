@@ -2,7 +2,7 @@ from typing import Callable, Any, Union, Optional
 import customtkinter as ctk
 from threading import Thread
 from .queue_manager import QueueData, QueueManager
-from algo.process_class import ProcessingClass
+from algo.processing_class import ProcessingClass
 
 
 class RunInThreadHandler(ctk.CTkFrame):

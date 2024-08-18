@@ -96,6 +96,9 @@ def black_is_correct(white_keys: list[RectType], black_keys: list[RectType]) -> 
             group_record.append(consecutive_black)
             consecutive_black = 0
         white_idx += 1
+    # only allow one extra black key at edge of screen
+    if (len(black_keys) - 1) - black_idx > 1:
+        return False
     # add remaining
     group_record.append(consecutive_black)
     if group_record[0] == 0:

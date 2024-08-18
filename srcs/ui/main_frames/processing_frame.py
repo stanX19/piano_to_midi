@@ -16,8 +16,7 @@ class ProcessingFrame(StepInterface):
         self.content_frame.grid_rowconfigure(0, weight=1)
         self.content_frame.grid_columnconfigure(0, weight=1)
         self.queue_frame = QueueProcessContainerFrame(self.content_frame, queue_manager)
-        self.queue_frame.grid(row=0, column=0, padx=5, pady=(5, 5), ipadx=15, ipady=15, sticky="nsew")
+        self.queue_frame.grid(row=0, column=0, padx=5, pady=(5, 5), sticky="nsew")
 
-    def show(self):
+    def refresh(self):
         self.queue_frame.refresh()
-        super().show()

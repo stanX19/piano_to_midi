@@ -5,7 +5,8 @@ import customtkinter as ctk
 
 from ui.classes import StepInterface
 from ui.classes import QueueManager
-from ui.classes import QueueContainerFrame
+from ui.classes import QueueContainerFrame, QueueProcessContainerFrame
+from algo.download_videos import is_valid_url
 
 
 class PathEntryFrame(ctk.CTkFrame):
@@ -66,10 +67,10 @@ class PathEntryFrame(ctk.CTkFrame):
         filepaths = ctk.filedialog.askopenfilenames(title="Select file", filetypes=filetypes)
         if not filepaths:
             return
-        if len(filepaths) == 1:
-            self.entry.delete(0, ctk.END)
-            self.entry.insert(0, filepaths[0])
-            return
+        # if len(filepaths) == 1:
+        #     self.entry.delete(0, ctk.END)
+        #     self.entry.insert(0, filepaths[0])
+        #     return
         for filepath in filepaths:
             self.clear()
             self.entry.insert(0, filepath)
@@ -90,24 +91,36 @@ class HomeFrame(StepInterface):
         self.queue_frame = QueueContainerFrame(self.content_frame, queue_manager)
         self.queue_frame.grid(row=1, column=0, padx=5, pady=(5, 5), ipadx=15, ipady=15, sticky="nsew")
 
+    def check_valid_path(self, path: str):
+        path = pathlib.Path(path)
+        if not path.is_file():
+            self.error_label.configure(text="Invalid path or url")
+            return False
+        if not path.match(self.entry_frame.get_extension_pattern()):
+            self.error_label.configure(text="Is not MP4 file")
+            return False
+        return True
+
     def add_to_queue(self):
         raw = self.entry_frame.entry.get().strip(" \"'")
         if not raw:
             return
-        path = pathlib.Path(raw)
-        if not path.is_file():
-            self.error_label.configure(text="Invalid path or url")
-        elif not path.match(self.entry_frame.get_extension_pattern()):
-            self.error_label.configure(text="Is not MP4 file")
+        if is_valid_url(raw):
+            self.queue_manager.add_url(raw)
+        elif self.check_valid_path(raw):
+            self.queue_manager.add_path(raw)
         else:
-            self.queue_manager.add_path(str(path))
-            self.queue_frame.refresh()
-            self.entry_frame.clear()
-            self.error_label.configure(text="")
+            return
+        self.queue_frame.refresh()
+        self.entry_frame.clear()
+        self.error_label.configure(text="")
 
     def on_next(self):
         if not self.queue_manager.selected_list:
             self.add_to_queue()
         if self.queue_manager.selected_list:
             super().on_next()
+
+    def refresh(self):
+        self.queue_frame.refresh()
 

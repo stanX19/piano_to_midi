@@ -1,9 +1,10 @@
 import customtkinter as ctk
 import cv2
-from typing import Optional
+from typing import Optional, Callable
 from PIL import Image, ImageTk
+from threading import Thread
 
-from algo.process_class import ProcessingClass
+from algo.processing_class import ProcessingClass
 from algo.utils import cv2_resize_to_fit
 
 
@@ -15,7 +16,7 @@ class CtkProcessDisplayFrame(ctk.CTkFrame):
         self.progress_bar: Optional[ctk.CTkProgressBar] = progress_bar
         self.width: int = width
         self.height: int = height
-        self.canvas: ctk.CTkCanvas = ctk.CTkCanvas(self)
+        self.canvas: ctk.CTkCanvas = ctk.CTkCanvas(self, width=width, height=height)
         self.canvas.pack(fill=ctk.BOTH, expand=True)
 
         # Placeholder for the image on the canvas
@@ -25,6 +26,9 @@ class CtkProcessDisplayFrame(ctk.CTkFrame):
         self._current_image = None
         self._play_schedule = None
 
+        # threads
+        self._thread: Optional[Thread] = None
+
     def update_frame(self):
         """Update the canvas with the current frame from the video."""
         array_img = self.processor.get_displayed_frame()
@@ -32,10 +36,10 @@ class CtkProcessDisplayFrame(ctk.CTkFrame):
             return
         self.width = self.canvas.winfo_width()
         self.height = self.canvas.winfo_height()
+        # print(f"update_frame {self.processor.video_path}")
         try:
             frame = cv2_resize_to_fit(array_img, self.width, self.height)
         except cv2.error as exc:
-            print(self.width, self.height)
             return
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         img = Image.fromarray(frame)
@@ -54,17 +58,23 @@ class CtkProcessDisplayFrame(ctk.CTkFrame):
             return
         self.progress_bar.set(self.processor.get_progress())
 
-    def expand_canvas(self):
-        self.canvas.configure(width=self.width, height=self.height)
+    def run_with_display(self, target: Callable, *args, **kwargs):
+        self.processor.add_task(target, *args, **kwargs)
+        if self._thread:
+            return
+        self._thread = Thread(target=self.processor.do_tasks, daemon=True)
+        self._thread.start()
+        self.play()
 
     def play(self):
         """Start displaying the video frames."""
         self.update_frame()
         self.update_progress_bar()
-        if not self.processor.is_completed():
+        if not self.processor.is_idle():
             self._play_schedule = self.after(100, self.play)
         else:
             self._play_schedule = None
+            self._thread.join()
 
     def stop(self):
         """Stop the video playback."""

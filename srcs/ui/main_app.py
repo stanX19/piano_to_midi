@@ -3,8 +3,8 @@ import time
 from typing import Callable, Any, Union
 import customtkinter as ctk
 import tkinter as tk
-from ui.classes import StepInterface, CANCEL_STR, QueueManager
-from ui.main_frames import HomeFrame, ConfirmationFrame, ProcessingFrame
+from ui.classes import StepInterface, CANCEL_STR, QueueManager, QuitConfirmationPopup
+from ui.main_frames import HomeFrame, ConfigFrame, ProcessingFrame
 
 
 class ScalableApp(ctk.CTk):
@@ -16,8 +16,11 @@ class ScalableApp(ctk.CTk):
         self._current_scaling = ctk.ScalingTracker.get_widget_scaling(self)
         self.bind("<Control-MouseWheel>", self.resize)
         self.apply_scaling()
-        self.after(1000, self.deiconify)
-        self.after(1001, self.overrideredirect, False)
+
+        def show():
+            self.deiconify()
+            self.after(1000, self.overrideredirect(False))
+        self.after(1000, show)
 
     def resize(self, arg: tk.Event):
         FACTOR = 1.1
@@ -49,11 +52,20 @@ class App(ScalableApp):
         self._current_frame: Union[None, StepInterface] = None
         self._frames: list[StepInterface] = [
             HomeFrame(self, self.choose_frame, self.queue_manager),
-            ConfirmationFrame(self, self.choose_frame, self.queue_manager),
+            ConfigFrame(self, self.choose_frame, self.queue_manager),
             ProcessingFrame(self, self.choose_frame, self.queue_manager),
         ]
         self._idx: int = 0
         self.current_frame = self._frames[0]
+        self.protocol("WM_DELETE_WINDOW", self.on_close_btn)
+
+    def on_close_btn(self):
+        running_tasks = self.queue_manager.get_running_tasks()
+
+        if running_tasks:
+            QuitConfirmationPopup(self, running_tasks, self.destroy)
+        else:
+            self.destroy()
 
     def choose_frame(self, ret_val):
         if ret_val == CANCEL_STR:

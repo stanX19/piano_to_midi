@@ -12,6 +12,7 @@ from .queue_item_frame import QueueItemProcessFrame
 class QueueContainerFrame(ctk.CTkScrollableFrame):
     def __init__(self, master, queue_manager: QueueManager, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
+        self._scrollbar.grid_forget()
         self.queue_manager: QueueManager = queue_manager
         self.queue_frame_list: list[QueueItemBaseFrame] = []
 
@@ -26,7 +27,6 @@ class QueueContainerFrame(ctk.CTkScrollableFrame):
         self.refresh()
 
     def refresh(self) -> None:
-        # Update existing frames
         queue_list = self.get_queue_data()
         frame_dict: dict[QueueData, QueueItemBaseFrame] = {
             frame.data: frame for frame in self.queue_frame_list
@@ -40,12 +40,12 @@ class QueueContainerFrame(ctk.CTkScrollableFrame):
             frame.set_idx(idx)
             self.queue_frame_list.append(frame)
 
-        for frame in self.queue_frame_list:
-            frame.show()
+        for idx, frame in enumerate(self.queue_frame_list):
+            self.after(0, frame.show)
 
         for frame in frame_dict.values():
             if frame not in self.queue_frame_list:
-                frame.destroy()
+                self.after(0, frame.destroy)
 
         # queue empty text
         if not self.queue_frame_list:

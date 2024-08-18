@@ -26,7 +26,7 @@ def _basename(path: str) -> str:
 
 
 def generate_p2m_dpf_filepath(video_path: str):
-    return os.path.join(p2m_path.data, f'dpf/{_basename(video_path)}.dpf.json')
+    return os.path.join(p2m_path.DPF_DIR, f'{_basename(video_path)}.dpf.json')
 
 
 def load_dpf_from_history(video_path: str):
@@ -136,6 +136,6 @@ def save_video_as_midi(dst_path: str, video_paths: Union[list[str], None] = None
 
 
 if __name__ == '__main__':
-    save_video_as_midi(p2m_path.data, [r"..\..\assets\amygdala_piano2.mp4"])
+    save_video_as_midi(p2m_path.DATA_DIR, [r"..\..\assets\amygdala_piano2.mp4"])
     # save_video_as_midi(p2m_path.data)
 

@@ -4,42 +4,51 @@ import os
 import customtkinter as ctk
 from p2m import p2m_path
 from algo.video_class import VideoClass
-from algo.process_class import ProcessingClass
+from algo.processing_class import ProcessingClass
+from algo.download_videos import get_playlist_urls, UrlData, get_video_title
+from algo.utils import SettableCachedProperty
 
 
 class QueueData:
-    WAITING = "Waiting"
-    PROCESSING = "Processing"
-    COMPLETE = "Complete"
-
-    def __init__(self, _str: str):
+    def __init__(self, _str: str, title=None, is_url=False):
         _str = str(_str)
-        self.src_path: str = _str
-        self.processor: ProcessingClass = ProcessingClass(self.src_path)
-        self.src_path_var = ctk.StringVar(value=self.src_path)
+        self.src_str: str = _str
+        self._is_url = is_url
+        if title is not None:
+            self.default_title = title
+        self.processor: ProcessingClass = ProcessingClass(self.src_str)
+        self.src_path_var = ctk.StringVar(value=self.src_str)
         self.is_selected_var: ctk.BooleanVar = ctk.BooleanVar(value=True)
-        self.title_var: ctk.StringVar = ctk.StringVar(value=self.get_default_title())
-        self.src_filename_var: ctk.StringVar = ctk.StringVar(value=pathlib.Path(self.src_path).name)
-        self.status = QueueData.WAITING
+        self.title_var: ctk.StringVar = ctk.StringVar(value=self.default_title)                     # save as
+        self.displayed_src_var: ctk.StringVar = ctk.StringVar(value=self.displayed_source)  # displayed source
 
     def __str__(self):
         return f"QueueData: [title='{self.title_var.get()}',\
-selected={self.is_selected_var.get()}, status={self.status}]"
+selected={self.is_selected_var.get()}, status={self.processor.state}]"
 
     def __repr__(self):
         return self.__str__()
 
     def get_save_path(self):
-        return pathlib.Path(os.path.join(p2m_path.data, self.title_var.get())).with_suffix(".mid")
+        return os.path.join(p2m_path.DATA_DIR, self.title_var.get()).rstrip(".") + ".mid"
 
     def reset_title(self):
-        self.title_var.set(self.get_default_title())
+        self.title_var.set(self.default_title)
 
     def is_selected(self):
         return self.is_selected_var.get()
 
-    def get_default_title(self):
-        return pathlib.Path(self.src_path).stem
+    @SettableCachedProperty
+    def default_title(self):
+        if self._is_url:
+            return get_video_title(self.src_str)
+        return pathlib.Path(self.src_str).stem
+
+    @SettableCachedProperty
+    def displayed_source(self):
+        if self._is_url:
+            return self.default_title
+        return pathlib.Path(self.src_str).name
 
 
 class QueueManager:
@@ -58,7 +67,7 @@ class QueueManager:
 
     @property
     def path_list(self) -> list[str]:
-        return [q.src_path for q in self._queue_list]
+        return [q.src_str for q in self._queue_list]
 
     @property
     def selected_list(self) -> list[QueueData]:
@@ -69,6 +78,23 @@ class QueueManager:
             return
         data = QueueData(path)
         self._queue_list.append(data)
+
+    def add_url(self, url: str):
+        print("add url called")
+        datas = get_playlist_urls(url)
+        for url_data in datas:
+            data = QueueData(url_data.url, url_data.title, is_url=True)
+            self._queue_list.append(data)
+
+    def get_running_tasks(self) -> list[str]:
+        running_tasks: list[str] = []
+        for q in self._queue_list:
+            if not q.processor.is_idle():
+                running_tasks.append(q.title_var.get())
+        return running_tasks
+
+    def has_running_task(self) -> bool:
+        return bool(self.get_running_tasks())
 
     def __len__(self):
         return self._queue_list.__len__()
