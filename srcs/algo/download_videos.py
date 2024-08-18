@@ -88,7 +88,25 @@ def get_video_title(url: str) -> Optional[str]:
             raise ValueError(exc)
 
 
+def is_url_format(_str: str) -> bool:
+    """
+    Checks if the provided string is a valid URL using regex.
+    """
+    url_regex = re.compile(
+        r'^(https?|ftp)://'  # Protocol
+        r'(\S+:\S+@)?'  # Optional username:password@
+        r'((([a-zA-Z0-9\-]+\.)+[a-zA-Z]{2,})|localhost|'  # Domain name or localhost
+        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|'  # OR IPv4 address
+        r'\[[a-fA-F0-9:]+])'  # OR IPv6 address
+        r'(:\d+)?'  # Optional port
+        r'(/\S*)?$', re.IGNORECASE)  # Path and query string
+
+    return re.match(url_regex, _str) is not None
+
+
 def is_valid_url(_str: str) -> bool:
+    if not is_url_format(_str):
+        return False
     try:
         get_video_title(_str)
     except ValueError:
@@ -110,4 +128,3 @@ def test():
 
 if __name__ == '__main__':
     test()
-

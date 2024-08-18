@@ -94,10 +94,10 @@ class HomeFrame(StepInterface):
     def check_valid_path(self, path: str):
         path = pathlib.Path(path)
         if not path.is_file():
-            self.error_label.configure(text="Invalid path or url")
+            self.show_error("Invalid path or url")
             return False
         if not path.match(self.entry_frame.get_extension_pattern()):
-            self.error_label.configure(text="Is not MP4 file")
+            self.show_error("Is not MP4 file")
             return False
         return True
 
@@ -113,7 +113,7 @@ class HomeFrame(StepInterface):
             return
         self.queue_frame.refresh()
         self.entry_frame.clear()
-        self.error_label.configure(text="")
+        self.show_error("")
 
     def on_next(self):
         if not self.queue_manager.selected_list:
