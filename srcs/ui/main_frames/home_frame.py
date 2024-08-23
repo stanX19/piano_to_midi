@@ -37,7 +37,8 @@ class PathEntryFrame(ctk.CTkFrame):
         self.mode_label.bind("<Button-1>", lambda _: self.change_mode())
         self.mode_label.grid(row=2, column=0, columnspan=3, sticky="nse", padx=20, pady=(0, 5))
         self.change_mode()
-        self._force_extension = "mp4"
+        self.accept_pattern_name: str = "Video Files"
+        self.accept_patterns: list[str] = ["*.mp4", "*.webm", "*.mkv", "*.avi", "*.mov"]
 
     def change_mode(self):
         TO_MIDI = "MP4 to midi"
@@ -56,12 +57,9 @@ class PathEntryFrame(ctk.CTkFrame):
     def call_add_to_queue(self, *args, **kwargs):
         self._func_add_to_queue()
 
-    def get_extension_pattern(self):
-        return f"*.{self._force_extension}" if self._force_extension else '*.*'
-
     def select_file(self):
-        if self._force_extension:
-            filetypes = [(f"{self._force_extension.upper()} files", self.get_extension_pattern())]
+        if self.accept_patterns:
+            filetypes = [(self.accept_pattern_name, " ".join(self.accept_patterns))]
         else:
             filetypes = [("All Files", "*.*")]
         filepaths = ctk.filedialog.askopenfilenames(title="Select file", filetypes=filetypes)
@@ -79,7 +77,7 @@ class PathEntryFrame(ctk.CTkFrame):
 
 class HomeFrame(StepInterface):
     def __init__(self, master: ctk.CTk, result_handler_func: Callable[[str], Any], queue_manager: QueueManager):
-        super().__init__(master, "Home", result_handler_func, cancel_btn_text=None)
+        super().__init__(master, "Home", result_handler_func, back_btn_text=None)
         self.queue_manager = queue_manager
 
         self.content_frame.grid_rowconfigure(0, weight=0)
@@ -96,8 +94,8 @@ class HomeFrame(StepInterface):
         if not path.is_file():
             self.show_error("Invalid path or url")
             return False
-        if not path.match(self.entry_frame.get_extension_pattern()):
-            self.show_error("Is not MP4 file")
+        if not any(path.match(pattern) for pattern in self.entry_frame.accept_patterns):
+            self.show_error(f"Is not file of type {self.entry_frame.accept_patterns}")
             return False
         return True
 

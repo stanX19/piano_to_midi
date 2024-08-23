@@ -116,13 +116,6 @@ class QueueItemProcessFrame(QueueItemBaseFrame):
 
         self.container_frame = ctk.CTkFrame(self)
         self.container_frame.pack(fill=ctk.BOTH)
-        # self.container_frame.grid_columnconfigure(0, weight=0)  # labels
-        # self.container_frame.grid_columnconfigure(1, weight=1)  # status and save_as
-        # self.container_frame.grid_columnconfigure(2, weight=0)  # buttons
-        # self.container_frame.grid_rowconfigure(0, weight=1)     # video frame
-        # self.container_frame.grid_rowconfigure(1, weight=0)     # progress bar
-        # self.container_frame.grid_rowconfigure(2, weight=0)     # line 1
-        # self.container_frame.grid_rowconfigure(3, weight=0)     # line 2
         self.container_frame.grid_columnconfigure(0, weight=0)  # video
         self.container_frame.grid_columnconfigure(1, weight=0)  # labels
         self.container_frame.grid_columnconfigure(2, weight=1)  # labels
@@ -140,21 +133,15 @@ class QueueItemProcessFrame(QueueItemBaseFrame):
         self.src_path_label = ctk.CTkLabel(self.container_frame, text="Video:", anchor=ctk.NW)
         self.status_label = ctk.CTkLabel(self.container_frame, text="Status:", anchor=ctk.NW)
         self.save_as_label = ctk.CTkLabel(self.container_frame, text="Save as:", anchor=ctk.NW)
-        self.src_path_text_label = CtkGridWrappingLabel(self.container_frame, text=data.src_str, anchor=ctk.NW)
-        self.save_as_text_label = CtkGridWrappingLabel(self.container_frame, text=data.get_save_path(), anchor=ctk.NW)
-        self.status_text_label = CtkGridWrappingLabel(self.container_frame, text="Not Started", anchor=ctk.NW)
+        self.src_path_text_label = CtkGridWrappingLabel(self.container_frame, textvariable=self.data.src_str_var,
+                                                        anchor=ctk.NW)
+        self.save_as_text_label = CtkGridWrappingLabel(self.container_frame, textvariable=self.data.save_path_var,
+                                                       anchor=ctk.NW)
+        self.status_text_label = CtkGridWrappingLabel(self.container_frame, textvariable=self.data.status_var,
+                                                      anchor=ctk.NW)
 
-        self.pause_btn = ctk.CTkButton(self.container_frame, text="Start", command=self.on_resume)
-        self.change_btn = ctk.CTkButton(self.container_frame, text="Change", command=self.on_change)
+        self.pause_btn = ctk.CTkButton(self.container_frame, text="Start", command=self.on_start)
 
-        # self.video_frame.grid(row=0, column=0, columnspan=3, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
-        # self.progress_bar.grid(row=1, column=0, columnspan=3, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
-        # self.status_label.grid(row=2, column=0, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
-        # self.save_as_label.grid(row=3, column=0, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
-        # self.status_text_label.grid(row=2, column=1, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
-        # self.save_as_text_label.grid(row=3, column=1, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
-        # self.pause_btn.grid(row=2, column=2, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
-        # self.change_btn.grid(row=3, column=2, padx=5, pady=(5, 5), ipadx=5, sticky="nsew")
         self.video_container_frame.grid(row=0, column=0, rowspan=4, padx=5, pady=(5, 5), ipadx=5, sticky="nsew")
         self.src_path_label.grid(row=0, column=1, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
         self.src_path_text_label.grid(row=0, column=2, padx=(5, 5), pady=(5, 0), ipadx=5, sticky="nsew")
@@ -168,33 +155,51 @@ class QueueItemProcessFrame(QueueItemBaseFrame):
 
     def on_pause(self):
         print("pause!")
-        self.pause_btn.configure(text="Resume", command=self.on_resume)
+        self.pause_btn.configure(text="Resume", command=self.on_start)
 
-    def on_resume(self):
+    def on_start(self):
         self.pause_btn.configure(state=ctk.DISABLED)
         # self.video_frame.expand_canvas()
-        self.video_frame.run_with_display(self.data.processor.save_as, self.data.get_save_path())
-        self.after(500, self.update_status_text)
+        self.video_frame.run_with_display(self.data.processor.save_as, self.data.save_path_var.get())
+        # TODO:
+        #   seperate to midi and save so that last minute change can be done
         # self.pause_btn.configure(text="Pause", command=self.on_pause)
 
-    def update_status_text(self):
-        self.status_text_label.configure(text=self.data.processor.state)
-        if self.data.processor.is_idle():
-            return
-        self.after(500, self.update_status_text)
+    # TODO
+    #   add back this button
+    # def on_change(self):
+    #     print("change? no change")
+    #     self.change_btn.configure(state=ctk.DISABLED)
 
-    def on_change(self):
-        print("change? no change")
-        self.change_btn.configure(state=ctk.DISABLED)
+    # TODO
+    #   def maximize(self):
+    #       use layout with big screen
+    # self.container_frame.grid_columnconfigure(0, weight=0)  # labels
+    # self.container_frame.grid_columnconfigure(1, weight=1)  # status and save_as
+    # self.container_frame.grid_columnconfigure(2, weight=0)  # buttons
+    # self.container_frame.grid_rowconfigure(0, weight=1)     # video frame
+    # self.container_frame.grid_rowconfigure(1, weight=0)     # progress bar
+    # self.container_frame.grid_rowconfigure(2, weight=0)     # line 1
+    # self.container_frame.grid_rowconfigure(3, weight=0)     # line 2
 
-    def update_progress_bar(self):
-        pass
+    # self.change_btn = ctk.CTkButton(self.container_frame, text="Change", command=self.on_change)
+
+    # self.video_frame.grid(row=0, column=0, columnspan=3, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
+    # self.progress_bar.grid(row=1, column=0, columnspan=3, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
+    # self.status_label.grid(row=2, column=0, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
+    # self.save_as_label.grid(row=3, column=0, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
+    # self.status_text_label.grid(row=2, column=1, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
+    # self.save_as_text_label.grid(row=3, column=1, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
+    # self.pause_btn.grid(row=2, column=2, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
+    # self.change_btn.grid(row=3, column=2, padx=5, pady=(5, 5), ipadx=5, sticky="nsew")
 
     def show(self):
         super().show()
         if not self._showed_video:
             self.after(100, self.show_video)
 
+    # TODO:
+    #   move this into video_frame
     def show_video(self):
         if self.winfo_viewable():
             self.video_frame.update_frame()

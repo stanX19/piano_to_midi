@@ -29,8 +29,8 @@ def generate_p2m_dpf_filepath(video_path: str):
     return os.path.join(p2m_path.DPF_DIR, f'{_basename(video_path)}.dpf.json')
 
 
-def load_dpf_from_history(video_path: str):
-    with open(generate_p2m_dpf_filepath(video_path), 'r') as f:
+def load_dpf_from_history(dpf_data_path: str):
+    with open(dpf_data_path, 'r') as f:
         data = json.load(f)
 
     return data["fps"], data["dpf"]
@@ -63,7 +63,7 @@ def save_dpf_data_as_midi(name: str, source_video_fps: int, difference_per_frame
 def _convert_one(video_path: str, name: str, use_history: bool, directory: str):
     print(f"Processing {name}")
     if use_history:
-        fps, dpf = load_dpf_from_history(video_path)
+        fps, dpf = load_dpf_from_history(generate_p2m_dpf_filepath(video_path))
     else:
         fps, dpf = video_to_dpf_data(video_path)
     save_dpf_data_as_midi(name, fps, dpf, directory)
@@ -136,6 +136,8 @@ def save_video_as_midi(dst_path: str, video_paths: Union[list[str], None] = None
 
 
 if __name__ == '__main__':
-    save_video_as_midi(p2m_path.DATA_DIR, [r"..\..\assets\amygdala_piano2.mp4"])
+    # save_video_as_midi(p2m_path.DATA_DIR, [r"..\..\assets\amygdala_piano2.mp4"])
     # save_video_as_midi(p2m_path.data)
+    path = r"C:\Users\DELL\PycharmProjects\pythonProject\piano_to_midi_312\data\dpf\[FULL] Ijin-tachi no Jikan - Assassins Pride ED - Piano Arrangement [Synthesia].dpf.json"
+    save_dpf_data_as_midi("assassins pride ed", *load_dpf_from_history(path), p2m_path.DATA_DIR)
 

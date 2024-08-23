@@ -2,14 +2,14 @@ from typing import Callable, Any, Optional
 
 import customtkinter as ctk
 
-CANCEL_STR = "cancel"
+BACK_STR = "BACK"
 
 
 class StepInterface(ctk.CTkFrame):
     def __init__(self, master: ctk.CTk,
                  title: str,
                  result_handler_func: Callable[[str], Any],
-                 cancel_btn_text: Optional[str] = "Cancel",
+                 back_btn_text: Optional[str] = "Back",
                  next_btn_text: Optional[str] = "Next"):
         super(StepInterface, self).__init__(master)
         self.master: ctk.CTk = master
@@ -35,10 +35,10 @@ class StepInterface(ctk.CTkFrame):
         self.button_frame = ctk.CTkFrame(self)
         self.button_frame.grid(row=2, column=0, pady=5, padx=5, sticky='ew')
 
-        if cancel_btn_text:
-            self.cancel_button = ctk.CTkButton(self.button_frame, text=cancel_btn_text,
-                                               command=self._on_cancel_button_press, width=0)
-            self.cancel_button.pack(side=ctk.LEFT, padx=5)
+        if back_btn_text:
+            self.back_button = ctk.CTkButton(self.button_frame, text=back_btn_text,
+                                             command=self._on_back_button_press, width=0)
+            self.back_button.pack(side=ctk.LEFT, padx=5)
 
         if next_btn_text:
             self.next_button = ctk.CTkButton(self.button_frame, text=next_btn_text, command=self._on_next_button_press,
@@ -55,20 +55,18 @@ class StepInterface(ctk.CTkFrame):
         self.on_next()
         self.next_button.configure(state=ctk.NORMAL)
 
-    def _on_cancel_button_press(self):
+    def _on_back_button_press(self):
         if not self._active:
             return
-        self.cancel_button.configure(state=ctk.DISABLED)
+        self.back_button.configure(state=ctk.DISABLED)
         self.on_cancel()
-        self.cancel_button.configure(state=ctk.NORMAL)
+        self.back_button.configure(state=ctk.NORMAL)
 
     def on_next(self):
-        if not self._active:
-            return
         return self._result_handler_func("next")
 
     def on_cancel(self):
-        return self._result_handler_func(CANCEL_STR)
+        return self._result_handler_func(BACK_STR)
 
     def show_error(self, text: str, interval: int = 3000):
         self.error_label.configure(text=text)

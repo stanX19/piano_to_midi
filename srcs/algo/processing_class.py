@@ -36,7 +36,7 @@ class ProcessStates:
 
 
 def state_method(start_state: Optional[str] = None):
-    state_varname = "_state"
+    state_varname = "state"
     active_calls_varname = "_active_state_calls"
 
     def decorator(method):
@@ -78,10 +78,23 @@ def state_cached_property(start_state: Optional[str] = None):
     return combined_decorator
 
 
+class HookHandler:
+    def __init__(self, *hooks):
+        self._hooked_functions: list[Callable] = list(hooks)
+
+    def hook(self, func: Callable):
+        self._hooked_functions.append(func)
+
+    def call(self, *args, **kwargs):
+        for func in self._hooked_functions:
+            func(*args, **kwargs)
+
+
 class ProcessingClass:
     def __init__(self, src_str: str):  #, title: Optional[str] = None):
-        self.src_str = src_str
-        self._state = ProcessStates.NOT_STARTED
+        self.src_str: str = src_str
+        self._state: str = ProcessStates.NOT_STARTED
+        self.state_hooks: HookHandler = HookHandler()
         # if title:
         #     self.title = title
 
@@ -116,6 +129,11 @@ class ProcessingClass:
     def state(self):
         return self._state
 
+    @state.setter
+    def state(self, val):
+        self._state = val
+        self.state_hooks.call()
+
     def is_failed(self):
         return self._state in (ProcessStates.ERROR, ProcessStates.FAILED_TO_FIND_KEYS)
 
@@ -126,7 +144,7 @@ class ProcessingClass:
         return self.is_completed() or self.is_failed() or self._state is ProcessStates.NOT_STARTED
 
     def get_dpf_filepath(self):
-        filename = self.src_str.replace(":", "").replace("\\", "_").replace("/", "_")
+        filename = self.title  # self.src_str.replace(":", "").replace("\\", "_").replace("/", "_")
         filename = utils.clean_filename(filename)
         return os.path.join(p2m_path.DPF_DIR, f'{filename}.dpf.json')
 
@@ -138,7 +156,7 @@ class ProcessingClass:
 
     @SettableCachedProperty
     def video_path(self):
-        if os.path.exists(self.src_str) and self.src_str.endswith(".mp4"):
+        if os.path.exists(self.src_str):
             return self.src_str
         elif is_valid_url(self.src_str):
             return self._download_and_get_video_path()

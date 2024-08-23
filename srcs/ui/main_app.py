@@ -3,7 +3,7 @@ import time
 from typing import Callable, Any, Union
 import customtkinter as ctk
 import tkinter as tk
-from ui.classes import StepInterface, CANCEL_STR, QueueManager, QuitConfirmationPopup
+from ui.classes import StepInterface, BACK_STR, QueueManager, QuitConfirmationPopup
 from ui.main_frames import HomeFrame, ConfigFrame, ProcessingFrame
 
 
@@ -48,7 +48,7 @@ class App(ScalableApp):
         self.title('Piano to midi')
         self.width = width
         self.height = height
-        self.queue_manager: QueueManager = QueueManager()
+        self.queue_manager: QueueManager = QueueManager(self)
         self._current_frame: Union[None, StepInterface] = None
         self._frames: list[StepInterface] = [
             HomeFrame(self, self.choose_frame, self.queue_manager),
@@ -68,7 +68,7 @@ class App(ScalableApp):
             self.destroy()
 
     def choose_frame(self, ret_val):
-        if ret_val == CANCEL_STR:
+        if ret_val == BACK_STR:
             self._idx -= 1
         else:
             self._idx += 1
