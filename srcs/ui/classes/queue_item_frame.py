@@ -110,8 +110,9 @@ class QueueItemEditFrame(QueueItemBaseFrame):
 
 
 class QueueItemProcessFrame(QueueItemBaseFrame):
-    def __init__(self, master, data: QueueData, idx: int):
+    def __init__(self, master, data: QueueData, idx: int, unselect_callback_func: Callable):
         super().__init__(master, data, idx)
+        self._unselect_callback_func = unselect_callback_func
 
         self.container_frame = ctk.CTkFrame(self)
         self.container_frame.pack(fill=ctk.BOTH)
@@ -139,7 +140,11 @@ class QueueItemProcessFrame(QueueItemBaseFrame):
         self.status_text_label = CtkGridWrappingLabel(self.container_frame, textvariable=self.data.status_var,
                                                       anchor=ctk.NW)
 
-        self.start_btn = ctk.CTkButton(self.container_frame, text="Start", command=self.on_start)
+        self.button_frame = ctk.CTkFrame(self.container_frame, fg_color="transparent")
+        for i in range(2):
+            self.button_frame.columnconfigure(i, weight=1)
+        self.start_btn = ctk.CTkButton(self.button_frame, text="Start", command=self.on_start)
+        self.cancel_btn = ctk.CTkButton(self.button_frame, text="Remove", command=self.on_cancel)
 
         self.video_container_frame.grid(row=0, column=0, rowspan=4, padx=5, pady=(5, 5), ipadx=5, sticky="nsew")
         self.src_path_label.grid(row=0, column=1, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
@@ -147,8 +152,23 @@ class QueueItemProcessFrame(QueueItemBaseFrame):
         self.status_label.grid(row=1, column=1, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
         self.status_text_label.grid(row=1, column=2, padx=(5, 5), pady=(5, 0), ipadx=5, sticky="nsew")
         self.save_as_label.grid(row=2, column=1, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
+        # TODO:
+        #   directory: label
+        #       - global?
+        #       -
+        #   filename: title
+        #       - filename collision checking
+        #       - real time changing
+        #       -
         self.save_as_text_label.grid(row=2, column=2, padx=(5, 5), pady=(5, 0), ipadx=5, sticky="nsew")
-        self.start_btn.grid(row=3, column=1, columnspan=2, padx=5, pady=(5, 0), ipadx=5, sticky="ew")
+        self.button_frame.grid(row=3, column=1, columnspan=2, padx=5, pady=(5, 5), ipadx=5, sticky="nsew")
+        self.start_btn.grid(row=0, column=1, padx=(5, 0), sticky="nsew")
+        self.cancel_btn.grid(row=0, column=0, padx=(5, 0), sticky="nsew")
+        # TODO:
+        #   download button
+        #       - download only
+        #       - does not affect start
+        #       - affected by terminate
 
         self._showed_video: bool = False
         self._is_started: bool = False
@@ -176,11 +196,10 @@ class QueueItemProcessFrame(QueueItemBaseFrame):
     def _mark_as_completed(self):
         self.start_btn.configure(text="Completed", state=ctk.DISABLED)
 
-    # TODO
-    #   add this button
-    # def on_change(self):
-    #     print("change? no change")
-    #     self.change_btn.configure(state=ctk.DISABLED)
+    def on_cancel(self):
+        self.cancel_btn.configure(state=ctk.DISABLED)
+        self.data.is_selected_var.set(False)
+        self._unselect_callback_func()
 
     # TODO
     #   def maximize(self):

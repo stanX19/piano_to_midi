@@ -39,6 +39,7 @@ class QueueData:
         # hooks
         self.processor.state_hooks.hook(self.update_status_text)
         self.title_var.trace_add("write", self.update_save_path)
+        self.update_save_path()
 
     def __str__(self):
         return f"QueueData: [title='{self.title_var.get()}',\
@@ -48,6 +49,8 @@ selected={self.is_selected_var.get()}, status={self.processor.state}]"
         return self.__str__()
 
     def update_save_path(self, *args):
+        # TODO:
+        #   use download path instead
         save_path = os.path.join(p2m_path.DATA_DIR, self.title_var.get()).rstrip(".") + ".mid"
         self.save_path_var.set(save_path)
 

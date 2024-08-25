@@ -80,7 +80,7 @@ class QueueProcessContainerFrame(QueueContainerFrame):
         return self.queue_manager.selected_list
 
     def get_new_item_frame(self, data):
-        return QueueItemProcessFrame(self, data, len(self.queue_frame_list) + 1)
+        return QueueItemProcessFrame(self, data, len(self.queue_frame_list) + 1, self.refresh)
 
     def toggle_start_for_all(self):
         for f in self.queue_frame_list:

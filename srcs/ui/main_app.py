@@ -57,7 +57,7 @@ class App(ScalableApp):
         self._frames: list[StepInterface] = [
             HomeFrame(self, self.choose_frame, self.queue_manager),
             # ConfigFrame(self, self.choose_frame, self.queue_manager),
-            ProcessingFrame(self, self.choose_frame, self.queue_manager),
+            # ProcessingFrame(self, self.choose_frame, self.queue_manager),
         ]
         self._idx: int = 0
         self.current_frame = self._frames[0]
@@ -81,8 +81,6 @@ class App(ScalableApp):
         else:
             self._idx += 1
         if self._idx < 0 or self._idx >= len(self._frames):
-            print(self.queue_manager)
-            self.quit()
             return
         self.current_frame = self._frames[self._idx]
 
