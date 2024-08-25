@@ -1,7 +1,9 @@
 import weakref
 
+
 class Pending:
     pass
+
 
 class SettableCachedProperty(property):
     def __init__(self, func):
@@ -11,8 +13,13 @@ class SettableCachedProperty(property):
         def fget(instance):
             if instance not in self.cache:
                 self.cache[instance] = Pending
-                self.cache[instance] = self.func(instance)
+                try:
+                    self.cache[instance] = self.func(instance)
+                except BaseException as exc:
+                    del self.cache[instance]
+                    raise exc
             while self.cache[instance] is Pending:
+                print("blocking")
                 pass
             return self.cache[instance]
 

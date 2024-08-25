@@ -9,7 +9,7 @@ from ui.classes import QueueEditContainerFrame
 
 
 class ConfigFrame(StepInterface):
-    def __init__(self, master: ctk.CTk, result_handler_func: Callable[[str], Any], queue_manager: QueueManager):
+    def __init__(self, master, result_handler_func: Callable[[str], Any], queue_manager: QueueManager):
         super().__init__(master, "Configurations", result_handler_func)
         self.queue_manager = queue_manager
 

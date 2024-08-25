@@ -1,5 +1,9 @@
+import os
 import pathlib
+import signal
+import sys
 import time
+import traceback
 from typing import Callable, Any, Union
 import customtkinter as ctk
 import tkinter as tk
@@ -52,7 +56,7 @@ class App(ScalableApp):
         self._current_frame: Union[None, StepInterface] = None
         self._frames: list[StepInterface] = [
             HomeFrame(self, self.choose_frame, self.queue_manager),
-            ConfigFrame(self, self.choose_frame, self.queue_manager),
+            # ConfigFrame(self, self.choose_frame, self.queue_manager),
             ProcessingFrame(self, self.choose_frame, self.queue_manager),
         ]
         self._idx: int = 0
@@ -60,12 +64,16 @@ class App(ScalableApp):
         self.protocol("WM_DELETE_WINDOW", self.on_close_btn)
 
     def on_close_btn(self):
-        running_tasks = self.queue_manager.get_running_tasks()
+        running_tasks = self.queue_manager.get_running_tasks_names()
 
         if running_tasks:
-            QuitConfirmationPopup(self, running_tasks, self.destroy)
+            QuitConfirmationPopup(self, running_tasks, self.end_app)
         else:
-            self.destroy()
+            self.end_app()
+
+    def end_app(self):
+        self.destroy()
+        self.queue_manager.terminate_all()
 
     def choose_frame(self, ret_val):
         if ret_val == BACK_STR:
@@ -100,3 +108,4 @@ if __name__ == "__main__":
     # ctk.set_appearance_mode("dark")  # Modes: system (default), light, dark
     # ctk.set_default_color_theme("blue")  # Themes: blue (default), dark-blue, green
     main()
+    print("ended ok")

@@ -1,10 +1,9 @@
 from typing import Callable, Any, Union
 import customtkinter as ctk
 from threading import Thread
-from .queue_manager import QueueData, QueueManager
+from .queue_manager import QueueData, QueueManager, ProcessStates
 from .templates import CtkEntryLabel, CtkGridWrappingLabel
 from .process_display_frame import CtkProcessDisplayFrame
-from .run_in_thread_handler import RunInThreadHandler
 
 
 class QueueItemBaseFrame(ctk.CTkFrame):
@@ -80,7 +79,7 @@ class QueueItemEditFrame(QueueItemBaseFrame):
 
         # Source path label and entry (readonly)
         self.src_label = CtkEntryLabel(self.container_frame, text="Source:", width=100)
-        self.save_as_label = CtkEntryLabel(self.container_frame, text="Save As:", width=100)
+        self.save_as_label = CtkEntryLabel(self.container_frame, text="Export as:", width=100)
         self.src_path_label = CtkEntryLabel(self.container_frame, text=data.displayed_source, width=0)
 
         # Save as label and entry (editable)
@@ -132,7 +131,7 @@ class QueueItemProcessFrame(QueueItemBaseFrame):
 
         self.src_path_label = ctk.CTkLabel(self.container_frame, text="Video:", anchor=ctk.NW)
         self.status_label = ctk.CTkLabel(self.container_frame, text="Status:", anchor=ctk.NW)
-        self.save_as_label = ctk.CTkLabel(self.container_frame, text="Save as:", anchor=ctk.NW)
+        self.save_as_label = ctk.CTkLabel(self.container_frame, text="Export as:", anchor=ctk.NW)
         self.src_path_text_label = CtkGridWrappingLabel(self.container_frame, textvariable=self.data.src_str_var,
                                                         anchor=ctk.NW)
         self.save_as_text_label = CtkGridWrappingLabel(self.container_frame, textvariable=self.data.save_path_var,
@@ -140,7 +139,7 @@ class QueueItemProcessFrame(QueueItemBaseFrame):
         self.status_text_label = CtkGridWrappingLabel(self.container_frame, textvariable=self.data.status_var,
                                                       anchor=ctk.NW)
 
-        self.pause_btn = ctk.CTkButton(self.container_frame, text="Start", command=self.on_start)
+        self.start_btn = ctk.CTkButton(self.container_frame, text="Start", command=self.on_start)
 
         self.video_container_frame.grid(row=0, column=0, rowspan=4, padx=5, pady=(5, 5), ipadx=5, sticky="nsew")
         self.src_path_label.grid(row=0, column=1, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
@@ -149,24 +148,36 @@ class QueueItemProcessFrame(QueueItemBaseFrame):
         self.status_text_label.grid(row=1, column=2, padx=(5, 5), pady=(5, 0), ipadx=5, sticky="nsew")
         self.save_as_label.grid(row=2, column=1, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
         self.save_as_text_label.grid(row=2, column=2, padx=(5, 5), pady=(5, 0), ipadx=5, sticky="nsew")
-        self.pause_btn.grid(row=3, column=1, columnspan=2, padx=5, pady=(5, 0), ipadx=5, sticky="ew")
+        self.start_btn.grid(row=3, column=1, columnspan=2, padx=5, pady=(5, 0), ipadx=5, sticky="ew")
 
         self._showed_video: bool = False
+        self._is_started: bool = False
 
     def on_pause(self):
-        print("pause!")
-        self.pause_btn.configure(text="Resume", command=self.on_start)
+        if not self._is_started:
+            return
+        self._is_started = False
+        self.start_btn.configure(text="Resume", command=self.on_start, state=ctk.NORMAL)
+        self.data.cancel_processing()
 
     def on_start(self):
-        self.pause_btn.configure(state=ctk.DISABLED)
-        # self.video_frame.expand_canvas()
-        self.video_frame.run_with_display(self.data.processor.save_as, self.data.save_path_var.get())
-        # TODO:
-        #   seperate to midi and save so that last minute change can be done
-        # self.pause_btn.configure(text="Pause", command=self.on_pause)
+        if self._is_started:
+            return
+        self.start_btn.configure(text="Started", state=ctk.DISABLED)
+        self.data.hook_start_func(self.video_frame.play)
+        self.data.hook_start_func(self._mark_as_started)
+        self.data.hook_end_func(self._mark_as_completed)
+        self.data.start_processing()
+
+    def _mark_as_started(self):
+        self._is_started = True
+        self.start_btn.configure(text="Pause", command=self.on_pause, state=ctk.NORMAL)
+
+    def _mark_as_completed(self):
+        self.start_btn.configure(text="Completed", state=ctk.DISABLED)
 
     # TODO
-    #   add back this button
+    #   add this button
     # def on_change(self):
     #     print("change? no change")
     #     self.change_btn.configure(state=ctk.DISABLED)
@@ -190,7 +201,7 @@ class QueueItemProcessFrame(QueueItemBaseFrame):
     # self.save_as_label.grid(row=3, column=0, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
     # self.status_text_label.grid(row=2, column=1, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
     # self.save_as_text_label.grid(row=3, column=1, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
-    # self.pause_btn.grid(row=2, column=2, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
+    # self.start_btn.grid(row=2, column=2, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
     # self.change_btn.grid(row=3, column=2, padx=5, pady=(5, 5), ipadx=5, sticky="nsew")
 
     def show(self):

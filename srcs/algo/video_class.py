@@ -22,6 +22,10 @@ class VideoClass:
         self._start_time: float = time.time()
         self._start_frame_count: int = 0
 
+    def __iter__(self):
+        while self.read_next():
+            yield self.current_frame
+
     def read_next(self):
         """Read the next frame from the video."""
         success, frame = self.cap.read()
@@ -124,11 +128,10 @@ class VideoClass:
         return copy.current_frame
 
 # Example usage:
-# video = VideoClass("path_to_video.mp4")
+# video = VideoClass(r"C:\Users\DELL\PycharmProjects\pythonProject\piano_to_midi_312\assets\amygdala_piano.mp4")
 # video.set_start_time()
-# while video.read_next():
-#     # Process the frame
-#     print(video.current_frame)
+# for frame in video:
+#     print(frame)
 #     video.display_current_frame()
 #     print(f"Estimated time remaining: {video.get_estimated_time_remaining()} seconds")
 # video.release()

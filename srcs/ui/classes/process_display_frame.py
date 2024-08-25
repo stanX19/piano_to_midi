@@ -2,7 +2,6 @@ import customtkinter as ctk
 import cv2
 from typing import Optional, Callable
 from PIL import Image, ImageTk
-from threading import Thread
 
 from algo.processing_class import ProcessingClass
 from algo.utils import cv2_resize_to_fit
@@ -25,9 +24,6 @@ class CtkProcessDisplayFrame(ctk.CTkFrame):
         # Reference to the current image to prevent garbage collection
         self._current_image = None
         self._play_schedule = None
-
-        # threads
-        self._thread: Optional[Thread] = None
 
     def update_frame(self):
         """Update the canvas with the current frame from the video."""
@@ -58,23 +54,14 @@ class CtkProcessDisplayFrame(ctk.CTkFrame):
             return
         self.progress_bar.set(self.processor.get_progress())
 
-    def run_with_display(self, target: Callable, *args, **kwargs):
-        self.processor.add_task(target, *args, **kwargs)
-        if self._thread:
-            return
-        self._thread = Thread(target=self.processor.do_tasks, daemon=True)
-        self._thread.start()
-        self.play()
-
     def play(self):
         """Start displaying the video frames."""
         self.update_frame()
         self.update_progress_bar()
         if not self.processor.is_idle():
-            self._play_schedule = self.after(100, self.play)
+            self._play_schedule = self.after(200, self.play)
         else:
             self._play_schedule = None
-            self._thread.join()
 
     def stop(self):
         """Stop the video playback."""

@@ -68,13 +68,13 @@ def interquartile_rgb_mean(values: np.ndarray) -> np.ndarray:
 
 
 def process_video_func(video: VideoClass, watch_cords: dict[RectType, list[CordType]],
-                       black_keys: list[RectType], difference_per_frame: list[np.ndarray]):
+                       black_keys: list[RectType], difference_per_frame: list[np.ndarray],
+                       is_running_func: Callable[[], bool] = lambda: True):
     watch_cords_values = list(watch_cords.values())
     cord_type = np.array([1 if cord in black_keys else 0 for cord in watch_cords])
     original_colors = np.full((len(watch_cords), 3), 0)  # [[b, g, r], [b, g, r], ..., [b, g, r]]
-    video.set_start_time()
 
-    while video.read_next():
+    while is_running_func() and video.read_next():
         # [[b, g, r], [b, g, r], ..., [b, g, r]]
         current_colors = np.array([get_average_color(video.current_frame, cords) for cords in watch_cords_values])
 
@@ -104,6 +104,7 @@ def get_dpf_in_thread(video: VideoClass, watch_cords: dict[RectType, list[CordTy
         target=process_video_func,
         args=(video, watch_cords, keys[1], difference_per_frame)
     )
+    video.set_start_time()
     processing_thread.start()
 
     cv2.imshow(video.name, video.current_frame)

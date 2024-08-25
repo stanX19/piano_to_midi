@@ -1,7 +1,7 @@
 
 #
 # class InterfaceManager:
-#     def __init__(self, master: ctk.CTk, steps: list[StepInterface]):
+#     def __init__(self, master, steps: list[StepInterface]):
 #         self.master: ctk.CTk = master
 #         self.steps: list[StepInterface] = steps
 #         self.current_index: int = 0

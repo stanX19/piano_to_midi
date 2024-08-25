@@ -12,7 +12,7 @@ from .queue_item_frame import QueueItemProcessFrame
 class QueueContainerFrame(ctk.CTkScrollableFrame):
     def __init__(self, master, queue_manager: QueueManager, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
-        self._scrollbar.grid_forget()
+        # self._scrollbar.grid_forget()
         self.queue_manager: QueueManager = queue_manager
         self.queue_frame_list: list[QueueItemBaseFrame] = []
 
@@ -81,3 +81,14 @@ class QueueProcessContainerFrame(QueueContainerFrame):
 
     def get_new_item_frame(self, data):
         return QueueItemProcessFrame(self, data, len(self.queue_frame_list) + 1)
+
+    def toggle_start_for_all(self):
+        for f in self.queue_frame_list:
+            if isinstance(f, QueueItemProcessFrame):
+                f.on_start()
+
+    def toggle_pause_for_all(self):
+        self.queue_manager.terminate_all()
+        for f in self.queue_frame_list:
+            if isinstance(f, QueueItemProcessFrame):
+                f.on_pause()

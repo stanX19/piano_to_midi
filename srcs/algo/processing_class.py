@@ -24,6 +24,7 @@ from p2m.p2m_types import *
 
 class ProcessStates:
     NOT_STARTED = "Not Started"
+    QUEUED = "Waiting"
     RUNNING = "Loading"
     DOWNLOADING_VIDEO = "Downloading video"
     FINDING_KEYS = "Finding Piano Keys"
@@ -33,6 +34,7 @@ class ProcessStates:
     COMPLETED = "Completed"
     ERROR = "Error"
     UNKNOWN = "Unknown"
+    TERMINATED = "Paused"  # Only this is edited by external
 
 
 def state_method(start_state: Optional[str] = None):
@@ -42,6 +44,7 @@ def state_method(start_state: Optional[str] = None):
     def decorator(method):
         @wraps(method)
         def wrapper(self, *args, **kwargs):
+            print(f"called {method.__name__}")
             original_state = getattr(self, state_varname, ProcessStates.UNKNOWN)
             setattr(self, active_calls_varname, getattr(self, active_calls_varname, 0) + 1)
 
@@ -53,6 +56,9 @@ def state_method(start_state: Optional[str] = None):
                 ret = method(self, *args, **kwargs)
             except KeysNotFoundError as exc:
                 setattr(self, state_varname, ProcessStates.FAILED_TO_FIND_KEYS)
+                raise exc
+            except OperationCancelledException as exc:
+                setattr(self, state_varname, ProcessStates.TERMINATED)
                 raise exc
             except BaseException as exc:
                 setattr(self, state_varname, ProcessStates.ERROR)
@@ -71,11 +77,11 @@ def state_method(start_state: Optional[str] = None):
 
 
 # Combination of state_method and SettableCachedProperty
-def state_cached_property(start_state: Optional[str] = None):
-    def combined_decorator(method):
-        return SettableCachedProperty(state_method(start_state)(method))
-
-    return combined_decorator
+# def state_cached_property(start_state: Optional[str] = None):
+#     def combined_decorator(method):
+#         return SettableCachedProperty(state_method(start_state)(method))
+#
+#     return combined_decorator
 
 
 class HookHandler:
@@ -91,12 +97,10 @@ class HookHandler:
 
 
 class ProcessingClass:
-    def __init__(self, src_str: str):  #, title: Optional[str] = None):
+    def __init__(self, src_str: str):
         self.src_str: str = src_str
         self._state: str = ProcessStates.NOT_STARTED
         self.state_hooks: HookHandler = HookHandler()
-        # if title:
-        #     self.title = title
 
         # self.save_as_path: str = save_as_path
         # self.fps: Optional[float] = None
@@ -111,8 +115,7 @@ class ProcessingClass:
         self._dpf_raw: list[np.ndarray] = []
         # self.diff_per_frame: list[list[int]] = []
         # self.midi: Optional[mido.MidiFile] = None
-
-        self._task_queue: list[tuple[Callable, tuple, dict]] = []
+        self._abort = False
 
     @SettableCachedProperty
     def title(self):
@@ -134,14 +137,28 @@ class ProcessingClass:
         self._state = val
         self.state_hooks.call()
 
+    def kill(self):
+        while not self.is_idle():
+            self._state = ProcessStates.TERMINATED
+
+    def _raise_if_terminated(self):
+        if self._state is ProcessStates.TERMINATED:
+            raise OperationCancelledException("Terminated")
+
+    def is_not_terminated(self):
+        return self._state is not ProcessStates.TERMINATED
+
     def is_failed(self):
-        return self._state in (ProcessStates.ERROR, ProcessStates.FAILED_TO_FIND_KEYS)
+        return self._state in (ProcessStates.ERROR, ProcessStates.FAILED_TO_FIND_KEYS, ProcessStates.TERMINATED)
 
     def is_completed(self):
         return self._state is ProcessStates.COMPLETED
 
+    def is_not_processing(self):
+        return self._state in (ProcessStates.NOT_STARTED, ProcessStates.QUEUED)
+
     def is_idle(self):
-        return self.is_completed() or self.is_failed() or self._state is ProcessStates.NOT_STARTED
+        return self.is_completed() or self.is_failed() or self.is_not_processing()
 
     def get_dpf_filepath(self):
         filename = self.title  # self.src_str.replace(":", "").replace("\\", "_").replace("/", "_")
@@ -176,6 +193,7 @@ class ProcessingClass:
     @state_method(start_state=ProcessStates.FINDING_KEYS)
     def find_black_and_white_keys(self):
         while self.video.read_next():
+            self._raise_if_terminated()
             self._unconfirmed_keys[:] = locate_keys_like(self.video.current_frame)
             classified_keys = classify_keys(self._unconfirmed_keys)
             if classified_keys is None:
@@ -185,16 +203,23 @@ class ProcessingClass:
             return
         raise KeysNotFoundError(self.src_str)
 
-    @state_cached_property(start_state=ProcessStates.PROCESSING_VIDEO)
-    def diff_per_frame(self):
+    @state_method(start_state=ProcessStates.PROCESSING_VIDEO)
+    def generate_diff_per_frame(self):
         if not self._white_keys or not self._black_keys:
             self.find_black_and_white_keys()
         self.watch_cords_dict.update(get_watch_cords_dict(self._white_keys, self._black_keys))
         self.watch_cords_list[:] = list(self.watch_cords_dict.keys())
         self.watch_cords_values[:] = list(self.watch_cords_dict.values())
         self._dpf_raw[:] = [np.full(len(self.watch_cords_dict), 0)]
-        process_video_func(self.video, self.watch_cords_dict, self._black_keys, self._dpf_raw)
+        # TODO: move to self
+        process_video_func(self.video, self.watch_cords_dict, self._black_keys, self._dpf_raw,
+                           self.is_not_terminated)
+        self._raise_if_terminated()
         return np.diff(np.array(self._dpf_raw), axis=0).astype(int).tolist()
+
+    @SettableCachedProperty
+    def diff_per_frame(self):
+        return self.generate_diff_per_frame()
 
     @state_method()
     def read_dpf_from_history(self):
@@ -203,9 +228,13 @@ class ProcessingClass:
         self.fps = data['fps']
         self.diff_per_frame = data['dpf']
 
-    @state_cached_property()
-    def midi(self):
+    @state_method()
+    def generate_midi(self):
         return dpf_data_to_midi(self.fps, self.diff_per_frame)
+
+    @SettableCachedProperty
+    def midi(self):
+        return self.generate_midi()
 
     @state_method()
     def save_dpf_data(self):
@@ -220,15 +249,6 @@ class ProcessingClass:
         pathlib.Path(abs_path).parent.mkdir(parents=True, exist_ok=True)
         self.save_dpf_data()
         self.midi.save(abs_path)
-
-    def add_task(self, target: Callable, *args, **kwargs):
-        self._task_queue.append((target, args, kwargs))
-
-    @state_method()
-    def do_tasks(self):
-        while self._task_queue:
-            func, args, kwargs = self._task_queue.pop(0)
-            func(*args, **kwargs)
 
     def get_displayed_frame(self):
         if self._video_ref is None:
@@ -246,9 +266,7 @@ class ProcessingClass:
 
         :return: progress 0.0 - 1.0
         """
-        if self._video_ref and self._state is ProcessStates.FINDING_KEYS:
-            return self._video_ref.get_progress()
-        if self._video_ref and self._state is ProcessStates.PROCESSING_VIDEO:
+        if self._video_ref:
             return self._video_ref.get_progress()
         if self._state is ProcessStates.DOWNLOADING_VIDEO:
             return self._download_progress
