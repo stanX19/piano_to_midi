@@ -3,10 +3,10 @@ from typing import Callable, Any, Union
 
 import customtkinter as ctk
 
-from ui.classes import StepInterface
-from ui.classes import QueueManager
-from ui.classes import QueueContainerFrame, QueueProcessContainerFrame, QueueEditContainerFrame
-from algo.download_videos import is_valid_url
+from srcs.ui.classes import StepInterface
+from srcs.ui.classes import QueueManager
+from srcs.ui.classes import QueueContainerFrame, QueueProcessContainerFrame, QueueEditContainerFrame
+from srcs.algo.download_videos import is_valid_url
 
 
 class PathEntryFrame(ctk.CTkFrame):
@@ -86,7 +86,7 @@ class HomeFrame(StepInterface):
         self.entry_frame = PathEntryFrame(self.content_frame, self.add_to_queue)
         self.entry_frame.grid(row=0, column=0, padx=5, pady=(5, 0), ipadx=0, ipady=0, sticky="nsew")
 
-        self.queue_frame = QueueProcessContainerFrame(self.content_frame, queue_manager)
+        self.queue_frame = QueueContainerFrame(self.content_frame, queue_manager)
         self.queue_frame.grid(row=1, column=0, padx=5, pady=(5, 5), ipadx=15, ipady=15, sticky="nsew")
 
     def check_valid_path(self, path: str):
@@ -121,4 +121,3 @@ class HomeFrame(StepInterface):
 
     def refresh(self):
         self.queue_frame.refresh()
-

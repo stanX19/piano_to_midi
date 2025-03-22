@@ -4,6 +4,7 @@ from threading import Thread
 from .queue_manager import QueueData, QueueManager, ProcessStates
 from .templates import CtkEntryLabel, CtkGridWrappingLabel
 from .process_display_frame import CtkProcessDisplayFrame
+from .interval_caller import IntervalCaller
 
 
 class QueueItemBaseFrame(ctk.CTkFrame):
@@ -116,54 +117,56 @@ class QueueItemProcessFrame(QueueItemBaseFrame):
 
         self.container_frame = ctk.CTkFrame(self)
         self.container_frame.pack(fill=ctk.BOTH)
+        self.container_frame.grid_rowconfigure(0, weight=0)  # info
+        self.container_frame.grid_rowconfigure(1, weight=1)  # buttons
         self.container_frame.grid_columnconfigure(0, weight=0)  # video
-        self.container_frame.grid_columnconfigure(1, weight=0)  # labels
-        self.container_frame.grid_columnconfigure(2, weight=1)  # labels
+        self.container_frame.grid_columnconfigure(1, weight=1)  # info & buttons
 
         self.video_container_frame = ctk.CTkFrame(self.container_frame)
         self.progress_bar = ctk.CTkProgressBar(self.video_container_frame)
-        self.video_frame = CtkProcessDisplayFrame(self.video_container_frame, data.processor, height=180, width=350,
-                                                  progress_bar=self.progress_bar)
+        self.video_frame = CtkProcessDisplayFrame(self.video_container_frame, data.processor, data.interval_caller,
+                                                  height=180, width=350, progress_bar=self.progress_bar)
         self.video_container_frame.grid_rowconfigure(0, weight=1)
         self.video_container_frame.grid_rowconfigure(1, weight=0)
 
         self.progress_bar.grid(row=1, sticky="nsew")
         self.video_frame.grid(row=0, sticky="sew")
 
-        self.src_path_label = ctk.CTkLabel(self.container_frame, text="Video:", anchor=ctk.NW)
-        self.status_label = ctk.CTkLabel(self.container_frame, text="Status:", anchor=ctk.NW)
-        self.save_as_label = ctk.CTkLabel(self.container_frame, text="Export as:", anchor=ctk.NW)
-        self.src_path_text_label = CtkGridWrappingLabel(self.container_frame, textvariable=self.data.src_str_var,
+        self.info_frame = ctk.CTkFrame(self.container_frame)
+        self.src_path_label = ctk.CTkLabel(self.info_frame, text="Video:", anchor=ctk.NW)
+        self.status_label = ctk.CTkLabel(self.info_frame, text="Status:", anchor=ctk.NW)
+        self.save_as_label = ctk.CTkLabel(self.info_frame, text="Export as:", anchor=ctk.NW)
+        self.src_path_text_label = CtkGridWrappingLabel(self.info_frame, textvariable=self.data.src_str_var,
                                                         anchor=ctk.NW)
-        self.save_as_text_label = CtkGridWrappingLabel(self.container_frame, textvariable=self.data.save_path_var,
+        self.save_as_text_label = CtkGridWrappingLabel(self.info_frame, textvariable=self.data.save_path_var,
                                                        anchor=ctk.NW)
-        self.status_text_label = CtkGridWrappingLabel(self.container_frame, textvariable=self.data.status_var,
+        self.status_text_label = CtkGridWrappingLabel(self.info_frame, textvariable=self.data.status_var,
                                                       anchor=ctk.NW)
+        self.src_path_label.grid(row=0, column=0, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
+        self.src_path_text_label.grid(row=0, column=1, padx=(5, 5), pady=(5, 0), ipadx=5, sticky="nsew")
+        self.status_label.grid(row=1, column=0, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
+        self.status_text_label.grid(row=1, column=1, padx=(5, 5), pady=(5, 0), ipadx=5, sticky="nsew")
+        self.save_as_label.grid(row=2, column=0, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
+        self.save_as_text_label.grid(row=2, column=1, padx=(5, 5), pady=(5, 0), ipadx=5, sticky="nsew")
 
         self.button_frame = ctk.CTkFrame(self.container_frame, fg_color="transparent")
-        for i in range(2):
-            self.button_frame.columnconfigure(i, weight=1)
+        self.button_frame.columnconfigure(0, weight=0)
+        self.button_frame.columnconfigure(1, weight=1)
+        self.button_frame.columnconfigure(2, weight=1)
         self.start_btn = ctk.CTkButton(self.button_frame, text="Start", command=self.on_start)
         self.cancel_btn = ctk.CTkButton(self.button_frame, text="Remove", command=self.on_cancel)
+        self.maximize_btn = ctk.CTkButton(self.button_frame, text="Maximize", command=self.maximize, width=0)
+        self.maximize_btn.grid(row=0, column=0, padx=(0, 0), sticky="nsew")
+        self.cancel_btn.grid(row=0, column=1, padx=(5, 0), sticky="nsew")
+        self.start_btn.grid(row=0, column=2, padx=(5, 0), sticky="nsew")
 
-        self.video_container_frame.grid(row=0, column=0, rowspan=4, padx=5, pady=(5, 5), ipadx=5, sticky="nsew")
-        self.src_path_label.grid(row=0, column=1, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
-        self.src_path_text_label.grid(row=0, column=2, padx=(5, 5), pady=(5, 0), ipadx=5, sticky="nsew")
-        self.status_label.grid(row=1, column=1, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
-        self.status_text_label.grid(row=1, column=2, padx=(5, 5), pady=(5, 0), ipadx=5, sticky="nsew")
-        self.save_as_label.grid(row=2, column=1, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
+        self.video_container_frame.grid(row=0, column=0, rowspan=2, padx=5, pady=(5, 5), ipadx=5, sticky="nsew")
+        self.info_frame.grid(row=0, column=1, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
+        self.button_frame.grid(row=1, column=1, padx=5, pady=(5, 5), ipadx=5, sticky="nsew")
         # TODO:
-        #   directory: label
-        #       - global?
-        #       -
         #   filename: title
         #       - filename collision checking
         #       - real time changing
-        #       -
-        self.save_as_text_label.grid(row=2, column=2, padx=(5, 5), pady=(5, 0), ipadx=5, sticky="nsew")
-        self.button_frame.grid(row=3, column=1, columnspan=2, padx=5, pady=(5, 5), ipadx=5, sticky="nsew")
-        self.start_btn.grid(row=0, column=1, padx=(5, 0), sticky="nsew")
-        self.cancel_btn.grid(row=0, column=0, padx=(5, 0), sticky="nsew")
         # TODO:
         #   download button
         #       - download only
@@ -201,27 +204,17 @@ class QueueItemProcessFrame(QueueItemBaseFrame):
         self.data.is_selected_var.set(False)
         self._unselect_callback_func()
 
-    # TODO
-    #   def maximize(self):
-    #       use layout with big screen
-    # self.container_frame.grid_columnconfigure(0, weight=0)  # labels
-    # self.container_frame.grid_columnconfigure(1, weight=1)  # status and save_as
-    # self.container_frame.grid_columnconfigure(2, weight=0)  # buttons
-    # self.container_frame.grid_rowconfigure(0, weight=1)     # video frame
-    # self.container_frame.grid_rowconfigure(1, weight=0)     # progress bar
-    # self.container_frame.grid_rowconfigure(2, weight=0)     # line 1
-    # self.container_frame.grid_rowconfigure(3, weight=0)     # line 2
-
-    # self.change_btn = ctk.CTkButton(self.container_frame, text="Change", command=self.on_change)
-
-    # self.video_frame.grid(row=0, column=0, columnspan=3, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
-    # self.progress_bar.grid(row=1, column=0, columnspan=3, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
-    # self.status_label.grid(row=2, column=0, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
-    # self.save_as_label.grid(row=3, column=0, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
-    # self.status_text_label.grid(row=2, column=1, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
-    # self.save_as_text_label.grid(row=3, column=1, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
-    # self.start_btn.grid(row=2, column=2, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
-    # self.change_btn.grid(row=3, column=2, padx=5, pady=(5, 5), ipadx=5, sticky="nsew")
+    def maximize(self):
+        self.container_frame.grid_rowconfigure(0, weight=0)  # info
+        self.container_frame.grid_rowconfigure(1, weight=1)  # buttons
+        self.info_frame.grid_forget()
+        self.video_frame.set_width(self.master.winfo_width())
+        self.video_frame.set_height(self.master.master.winfo_height())
+        self.show_video()
+        self.video_container_frame.grid_forget()
+        self.video_container_frame.grid(row=0, column=0, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
+        self.button_frame.grid_forget()
+        self.button_frame.grid(row=1, column=0, padx=5, pady=(5, 0), ipadx=5, sticky="nsew")
 
     def show(self):
         super().show()

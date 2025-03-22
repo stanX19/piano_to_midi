@@ -3,15 +3,18 @@ import cv2
 from typing import Optional, Callable
 from PIL import Image, ImageTk
 
-from algo.processing_class import ProcessingClass
-from algo.utils import cv2_resize_to_fit
+from srcs.algo.processing_class import ProcessingClass
+from srcs.algo.utils import cv2_resize_to_fit
+from .interval_caller import IntervalCaller
 
 
 class CtkProcessDisplayFrame(ctk.CTkFrame):
-    def __init__(self, master, processor: ProcessingClass, width: int = 1280, height: int = 720,
+    def __init__(self, master, processor: ProcessingClass, interval_caller: IntervalCaller,
+                 width: int = 1280, height: int = 720,
                  progress_bar: Optional[ctk.CTkProgressBar] = None, **kwargs):
         super().__init__(master, **kwargs)
         self.processor: ProcessingClass = processor
+        self.interval_caller: IntervalCaller = interval_caller
         self.progress_bar: Optional[ctk.CTkProgressBar] = progress_bar
         self.width: int = width
         self.height: int = height
@@ -25,6 +28,17 @@ class CtkProcessDisplayFrame(ctk.CTkFrame):
         self._current_image = None
         self._play_schedule = None
 
+    def reinit_canvas(self):
+        self.canvas.configure(width=self.width, height=self.height)
+
+    def set_width(self, width):
+        self.width = width
+        self.reinit_canvas()
+
+    def set_height(self, height):
+        self.height = height
+        self.reinit_canvas()
+
     def update_frame(self):
         """Update the canvas with the current frame from the video."""
         array_img = self.processor.get_displayed_frame()
@@ -35,7 +49,7 @@ class CtkProcessDisplayFrame(ctk.CTkFrame):
         # print(f"update_frame {self.processor.video_path}")
         try:
             frame = cv2_resize_to_fit(array_img, self.width, self.height)
-        except cv2.error as exc:
+        except cv2.error:
             return
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         img = Image.fromarray(frame)
@@ -59,7 +73,7 @@ class CtkProcessDisplayFrame(ctk.CTkFrame):
         self.update_frame()
         self.update_progress_bar()
         if not self.processor.is_idle():
-            self._play_schedule = self.after(200, self.play)
+            self._play_schedule = self.interval_caller.add_to_queue(self.play)
         else:
             self._play_schedule = None
 

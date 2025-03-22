@@ -3,8 +3,8 @@ import cv2
 from typing import Optional
 from PIL import Image, ImageTk
 
-from algo.video_class import VideoClass
-from algo.utils import cv2_resize_to_fit
+from srcs.algo.video_class import VideoClass
+from srcs.algo.utils import cv2_resize_to_fit
 
 
 class CtkVideoFrame(ctk.CTkFrame):

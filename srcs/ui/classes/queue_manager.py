@@ -6,19 +6,23 @@ from typing import Callable, Iterable, Any
 
 import customtkinter as ctk
 from p2m import p2m_path
-from algo.video_class import VideoClass
-from algo.processing_class import ProcessingClass, ProcessStates
-from algo.download_videos import get_playlist_urls, UrlData, get_video_title
-from algo.utils import SettableCachedProperty
+from srcs.algo.video_class import VideoClass
+from srcs.algo.processing_class import ProcessingClass, ProcessStates
+from srcs.algo.download_videos import get_playlist_urls, UrlData, get_video_title
+from srcs.algo.utils import SettableCachedProperty
 from .process_display_frame import CtkProcessDisplayFrame
+from .interval_caller import IntervalCaller
 
 
 class QueueData:
-    def __init__(self, master, _str: str, submit_to_executor: Callable[[Callable], Any], title=None, is_url=False):
+    def __init__(self, master, _str: str,
+                 submit_to_executor: Callable[[Callable], Any], interval_caller: IntervalCaller,
+                 title=None, is_url=False):
         _str = str(_str)
         self.master: ctk.CTk = master
         self.src_str: str = _str
         self._submit_to_executor: Callable[[Callable], Any] = submit_to_executor
+        self.interval_caller: IntervalCaller = interval_caller
         self._is_url: bool = is_url
         self._is_running: bool = False
         self._start_hooks: set[tuple[Callable, Any]] = set()
@@ -115,8 +119,9 @@ selected={self.is_selected_var.get()}, status={self.processor.state}]"
 class QueueManager:
     def __init__(self, master: ctk.CTk):
         self.master: ctk.CTk = master
+        self.interval_caller: IntervalCaller = IntervalCaller(self.master, interval=30)
         self._queue_list: list[QueueData] = []
-        self._max_threads: int = 3
+        self._max_threads: int = 10
         self._executor = ThreadPoolExecutor(max_workers=self._max_threads)
 
     def __repr__(self) -> str:
@@ -130,8 +135,8 @@ class QueueManager:
         return self._queue_list[:]
 
     @property
-    def srcs_list(self) -> list[str]:
-        return [q.src_str for q in self._queue_list]
+    def srcs_dict(self) -> dict[str, QueueData]:
+        return {q.src_str: q for q in self._queue_list}
 
     @property
     def selected_list(self) -> list[QueueData]:
@@ -141,17 +146,22 @@ class QueueManager:
         self._queue_list.append(data)
 
     def add_path(self, path: str) -> None:
-        if path in self.srcs_list:
+        srcs_dict = self.srcs_dict
+        if path in srcs_dict:
+            srcs_dict[path].is_selected_var.set(True)
             return
-        data = QueueData(self.master, path, self.submit_to_executor)
+        data = QueueData(self.master, path, self.submit_to_executor, self.interval_caller)
         self._add_queue_data(data)
 
     def add_url(self, url: str):
-        if url in self.srcs_list:
+        srcs_dict = self.srcs_dict
+        if url in srcs_dict:
+            srcs_dict[url].is_selected_var.set(True)
             return
         datas = get_playlist_urls(url)
         for url_data in datas:
-            data = QueueData(self.master, url_data.url, self.submit_to_executor, url_data.title, is_url=True)
+            data = QueueData(self.master, url_data.url, self.submit_to_executor, self.interval_caller,
+                             url_data.title, is_url=True)
             self._add_queue_data(data)
 
     def get_running_tasks(self) -> list[QueueData]:
@@ -167,6 +177,7 @@ class QueueManager:
         self._executor.submit(func)
 
     def terminate_all(self):
+        self.interval_caller.stop()
         self._executor.shutdown(wait=False, cancel_futures=True)
         for q in self.get_running_tasks():
             q.cancel_processing()

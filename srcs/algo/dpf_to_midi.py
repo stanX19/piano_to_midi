@@ -1,8 +1,9 @@
 import mido
 import statistics
-from p2m import p2m_constants
+from srcs.algo.dpf_analyser import Analyser
 
-
+# TODO
+#  separate black keys and white keys threshold completely
 class DpfToMidiConverter:
     def __init__(self, source_video_fps: float, difference_per_frame: list[list[int]]):
         self.source_video_fps = source_video_fps
@@ -16,6 +17,9 @@ class DpfToMidiConverter:
         self.note_on_record: dict[int, bool] = {}
         self.note_times: list[int] = []
         self.future_look_frames = 0
+        self.note_off_threshold, self.note_on_threshold = Analyser(difference_per_frame).find_note_thresholds()
+        print(f"  Note On Boundary: {self.note_on_threshold:.2f}")
+        print(f"  Note Off Boundary: {self.note_off_threshold:.2f}")
 
     def get_note_times(self):
         record = {}
@@ -25,9 +29,9 @@ class DpfToMidiConverter:
             for key in record:
                 record[key] += 1
             for key_idx, brightness_diff in enumerate(frame_diff):
-                if brightness_diff > p2m_constants.ON_THRESHOLD:
+                if brightness_diff > self.note_on_threshold:
                     record[key_idx] = 0
-                elif brightness_diff < -p2m_constants.OFF_THRESHOLD and key_idx in record:
+                elif brightness_diff < self.note_off_threshold and key_idx in record:
                     note_times.append(record[key_idx])
                     del record[key_idx]
 
@@ -50,7 +54,7 @@ class DpfToMidiConverter:
     def add_future_note_on(self, frame_idx, key_idx, note):
         for frame_diff in self.difference_per_frame[frame_idx: frame_idx + self.future_look_frames]:
             brightness_diff = frame_diff[key_idx]  # Adjust index for note range
-            if brightness_diff > p2m_constants.ON_THRESHOLD:
+            if brightness_diff > self.note_on_threshold:
                 self.add_note_on(note)
                 frame_diff[key_idx] = 0  # Prevent duplicate note-on events
                 print("future note on triggered")
@@ -78,9 +82,9 @@ class DpfToMidiConverter:
             for key_idx, brightness_diff in enumerate(frame_diff):
                 note = 24 + key_idx  # Low C (24) as the base note
 
-                if brightness_diff > p2m_constants.ON_THRESHOLD:
+                if brightness_diff > self.note_on_threshold:
                     self.add_note_on(note)
-                elif brightness_diff < -p2m_constants.OFF_THRESHOLD:
+                elif brightness_diff < self.note_off_threshold:
                     self.add_note_off(note)
                     # self.add_future_note_on(frame_idx, key_idx, note)
 

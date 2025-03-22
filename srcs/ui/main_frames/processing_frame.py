@@ -3,9 +3,9 @@ from typing import Callable, Any, Union
 
 import customtkinter as ctk
 
-from ui.classes import StepInterface
-from ui.classes import QueueManager
-from ui.classes import QueueProcessContainerFrame
+from srcs.ui.classes import StepInterface
+from srcs.ui.classes import QueueManager
+from srcs.ui.classes import QueueProcessContainerFrame
 
 
 class HelperButtonsFrame(ctk.CTkFrame):
@@ -33,7 +33,7 @@ class ProcessingFrame(StepInterface):
         self.queue_frame.grid(row=0, column=0, padx=5, pady=(5, 0), sticky="nsew")
         self.helper_button_frame = HelperButtonsFrame(self.content_frame, {
             "Start all": self.queue_frame.toggle_start_for_all,
-            "Terminate all": self.queue_frame.toggle_pause_for_all
+            "Pause all": self.queue_frame.toggle_pause_for_all
         })
         self.helper_button_frame.grid(row=1, column=0, padx=5, pady=(5, 5), sticky="nsew")
 

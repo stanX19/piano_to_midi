@@ -7,6 +7,7 @@ from .queue_item_frame import QueueItemBaseFrame
 from .queue_item_frame import QueueItemFrame
 from .queue_item_frame import QueueItemEditFrame
 from .queue_item_frame import QueueItemProcessFrame
+from .interval_caller import IntervalCaller
 
 
 class QueueContainerFrame(ctk.CTkScrollableFrame):

@@ -7,8 +7,8 @@ import traceback
 from typing import Callable, Any, Union
 import customtkinter as ctk
 import tkinter as tk
-from ui.classes import StepInterface, BACK_STR, QueueManager, QuitConfirmationPopup
-from ui.main_frames import HomeFrame, ConfigFrame, ProcessingFrame
+from srcs.ui.classes import StepInterface, BACK_STR, QueueManager, QuitConfirmationPopup, IntervalCaller
+from srcs.ui.main_frames import HomeFrame, ConfigFrame, ProcessingFrame
 
 
 class ScalableApp(ctk.CTk):
@@ -56,8 +56,8 @@ class App(ScalableApp):
         self._current_frame: Union[None, StepInterface] = None
         self._frames: list[StepInterface] = [
             HomeFrame(self, self.choose_frame, self.queue_manager),
-            # ConfigFrame(self, self.choose_frame, self.queue_manager),
-            # ProcessingFrame(self, self.choose_frame, self.queue_manager),
+            ConfigFrame(self, self.choose_frame, self.queue_manager),
+            ProcessingFrame(self, self.choose_frame, self.queue_manager),
         ]
         self._idx: int = 0
         self.current_frame = self._frames[0]
@@ -72,8 +72,8 @@ class App(ScalableApp):
             self.end_app()
 
     def end_app(self):
-        self.destroy()
         self.queue_manager.terminate_all()
+        self.destroy()
 
     def choose_frame(self, ret_val):
         if ret_val == BACK_STR:

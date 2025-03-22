@@ -3,9 +3,9 @@ from typing import Callable, Any, Union
 
 import customtkinter as ctk
 
-from ui.classes import StepInterface
-from ui.classes import QueueManager
-from ui.classes import QueueEditContainerFrame
+from srcs.ui.classes import StepInterface
+from srcs.ui.classes import QueueManager
+from srcs.ui.classes import QueueEditContainerFrame
 
 
 class ConfigFrame(StepInterface):
