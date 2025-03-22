@@ -2,6 +2,8 @@
 
 A project designed to convert piano Synthesia videos into MIDI files.
 
+**Note:** This project is still under development, results may vary due to new updates
+
 ## Installation
 
 ```commandline
@@ -30,17 +32,15 @@ This project uses cv2 to detect piano keys and track changes in BGR values acros
 ### Key Features:
 
 - Extracts video URLs from YouTube playlists.
-
 - Downloads individual videos with customizable settings.
-
 - Processes videos to detect piano key presses.
-
 - Converts detected keypress patterns into MIDI format.
 
-##### Key points:
+### Key points:
 
 - The program monitors pixel value changes frame-by-frame, so a higher frame rate will improve accuracy.
 - The difference in BGR values per frame (DPF) is stored in `./data/dpf` as cache.
+- The program uses gaussian mixture model to accurately determine note on thresholds
 - After processing, the program converts the DPF data into a MIDI file, which is saved by default in the `./data` directory.
 
 ## File Structure
@@ -64,6 +64,6 @@ This project uses cv2 to detect piano keys and track changes in BGR values acros
 ![img.png](assets/img_3.png)
 ![img.png](assets/img_6.png)
 
-### gaussian mixture model
+### gaussian mixture model for note on boundary detection
 
 ![img.png](assets/img_8.png)
