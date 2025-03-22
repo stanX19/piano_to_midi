@@ -60,13 +60,9 @@ This project uses cv2 to detect piano keys and track changes in BGR values acros
 
 ### gui
 
-![img.png](assets/img.png)
 ![img.png](assets/img_1.png)
-![img.png](assets/img_2.png)
 ![img.png](assets/img_3.png)
-![img.png](assets/img_5.png)
 ![img.png](assets/img_6.png)
-![img.png](assets/img_7.png)
 
 ### gaussian mixture model
 
